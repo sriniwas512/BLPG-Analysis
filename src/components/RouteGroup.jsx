@@ -18,10 +18,12 @@ export default function RouteGroup({
   inputs, distanceMatrix, onAdd, onEdit, onDelete, onReset,
 }) {
   const [expandedId, setExpandedId] = useState(null);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   if (!routes || routes.length === 0) return null;
   const c = COLOR_MAP[color];
 
-  const COL_COUNT = 9; // route + earnings + $/pmt + days + sea + bunker + port + comm + edit
+  // route + earnings + $/pmt + days + tce + [breakdown: bunker+port+comm] + totalCost + profit + edit
+  const COL_COUNT = showBreakdown ? 11 : 8;
 
   return (
     <section className={`bg-tn-bg-alt rounded-xl border ${c.border} shadow-lg ${c.ring} overflow-hidden`}>
@@ -58,72 +60,113 @@ export default function RouteGroup({
               <Th sub="$/pmt">Implied Freight</Th>
               <Th sub="days">Total Days</Th>
               <Th sub="$/day">Implied TCE/Day</Th>
-              <Th sub="$">Bunker</Th>
-              <Th sub="$">Port Chgs</Th>
-              <Th sub="$">Commission</Th>
+
+              {/* Expandable cost breakdown */}
+              {showBreakdown && (
+                <>
+                  <Th sub="$">Bunker</Th>
+                  <Th sub="$">Port Chgs</Th>
+                  <Th sub="$">Commission</Th>
+                </>
+              )}
+
+              {/* Total Cost header with expand toggle */}
+              <th className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider border-b border-tn-border
+                             whitespace-nowrap text-right text-tn-muted">
+                <div className="flex items-center justify-end gap-1">
+                  <button
+                    onClick={() => setShowBreakdown((b) => !b)}
+                    title={showBreakdown ? 'Hide breakdown' : 'Show cost breakdown'}
+                    className="text-[10px] px-1 py-0.5 rounded border border-tn-border/60
+                               text-tn-muted hover:text-tn-fg hover:border-tn-fg transition-colors font-mono leading-none"
+                  >
+                    {showBreakdown ? '◀' : '▶'}
+                  </button>
+                  Total Cost
+                </div>
+                <div className="font-normal normal-case tracking-normal text-[10px] text-tn-muted mt-0.5 text-right">$</div>
+              </th>
+
+              <Th highlight sub="$ · owner's net">Total Profit</Th>
               <th className="px-2 border-b border-tn-border w-8" />
             </tr>
           </thead>
           <tbody>
-            {routes.map((row) => (
-              <>
-                <tr key={row.id} className="border-b border-tn-border/40 hover:bg-tn-bg-hi transition-colors">
-                  <td className="px-3 py-2 sticky left-0 z-10 bg-tn-bg-alt">
-                    <RouteLabel id={row.id} origin={row.origin} dest={row.dest} color={c} />
-                  </td>
+            {routes.map((row) => {
+              const profit = row.totalFreight - row.totalCost;
+              return (
+                <>
+                  <tr key={row.id} className="border-b border-tn-border/40 hover:bg-tn-bg-hi transition-colors">
+                    <td className="px-3 py-2 sticky left-0 z-10 bg-tn-bg-alt">
+                      <RouteLabel id={row.id} origin={row.origin} dest={row.dest} color={c} />
+                    </td>
 
-                  <td className="px-3 py-2 text-right whitespace-nowrap">
-                    <span className={`${c.bg} ${c.text} px-2.5 py-1 rounded border ${c.border}
-                                      font-mono font-bold text-sm`}>
-                      ${fmt0(row.totalFreight)}
-                    </span>
-                  </td>
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <span className={`${c.bg} ${c.text} px-2.5 py-1 rounded border ${c.border}
+                                        font-mono font-bold text-sm`}>
+                        ${fmt0(row.totalFreight)}
+                      </span>
+                    </td>
 
-                  <td className="px-3 py-2 text-right whitespace-nowrap">
-                    <span className="font-mono text-tn-fg text-xs">
-                      ${fmt2(row.frtRatePerMT)}
-                      <span className="text-[10px] text-tn-muted ml-1">/pmt</span>
-                    </span>
-                  </td>
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <span className="font-mono text-tn-fg text-xs">
+                        ${fmt2(row.frtRatePerMT)}
+                        <span className="text-[10px] text-tn-muted ml-1">/pmt</span>
+                      </span>
+                    </td>
 
-                  <Td>{fmtD(row.totalDays)}</Td>
-                  <Td>${fmt0(row.impliedTce)}</Td>
-                  <Td>${fmt0(row.bunkerCost)}</Td>
-                  <Td>${fmt0(row.portChg)}</Td>
-                  <Td>{row.commission != null ? `$${fmt0(row.commission)}` : '–'}</Td>
+                    <Td>{fmtD(row.totalDays)}</Td>
+                    <Td>${fmt0(row.impliedTce)}</Td>
 
-                  <td className="px-2 py-2 text-center">
-                    <button
-                      onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
-                      title={expandedId === row.id ? 'Close editor' : 'Edit route'}
-                      className={`text-[11px] px-1.5 py-0.5 rounded border transition-colors font-mono
-                                  ${expandedId === row.id
-                                    ? `${c.btnBg} ${c.text} border-current`
-                                    : 'text-tn-muted border-tn-border hover:text-tn-fg hover:border-tn-fg'}`}
-                    >
-                      {expandedId === row.id ? '✕' : '✎'}
-                    </button>
-                  </td>
-                </tr>
+                    {showBreakdown && (
+                      <>
+                        <Td>${fmt0(row.bunkerCost)}</Td>
+                        <Td>${fmt0(row.portChg)}</Td>
+                        <Td>{row.commission != null ? `$${fmt0(row.commission)}` : '–'}</Td>
+                      </>
+                    )}
 
-                {expandedId === row.id && (
-                  <tr key={row.id + '_edit'} className="bg-tn-bg border-b border-tn-border">
-                    <td colSpan={COL_COUNT} className="p-4">
-                      <EditForm
-                        row={row}
-                        c={c}
-                        inputs={inputs}
-                        distanceMatrix={distanceMatrix}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onReset={onReset}
-                        onDone={() => setExpandedId(null)}
-                      />
+                    <Td>${fmt0(row.totalCost)}</Td>
+
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <span className="font-mono font-bold text-sm text-tn-green">
+                        ${fmt0(profit)}
+                      </span>
+                    </td>
+
+                    <td className="px-2 py-2 text-center">
+                      <button
+                        onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
+                        title={expandedId === row.id ? 'Close editor' : 'Edit route'}
+                        className={`text-[11px] px-1.5 py-0.5 rounded border transition-colors font-mono
+                                    ${expandedId === row.id
+                                      ? `${c.btnBg} ${c.text} border-current`
+                                      : 'text-tn-muted border-tn-border hover:text-tn-fg hover:border-tn-fg'}`}
+                      >
+                        {expandedId === row.id ? '✕' : '✎'}
+                      </button>
                     </td>
                   </tr>
-                )}
-              </>
-            ))}
+
+                  {expandedId === row.id && (
+                    <tr key={row.id + '_edit'} className="bg-tn-bg border-b border-tn-border">
+                      <td colSpan={COL_COUNT} className="p-4">
+                        <EditForm
+                          row={row}
+                          c={c}
+                          inputs={inputs}
+                          distanceMatrix={distanceMatrix}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onReset={onReset}
+                          onDone={() => setExpandedId(null)}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })}
 
             {/* Add route row */}
             <tr className="border-t border-tn-border/40">
