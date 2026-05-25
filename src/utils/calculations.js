@@ -260,16 +260,28 @@ function calcIndiaRoute(cfg, inp, bResults) {
 export function calculateAll(inputs) {
   const inp = { ...DEFAULT_INPUTS, ...inputs };
 
-  const routeB = { ...calcB(inp), id: 'B', origin: 'Ras Tanura', dest: 'Chiba' };
-  const routeD = { ...calcD(inp, routeB), id: 'D', origin: 'MAA', dest: 'Ningbo + Caojing' };
-  const indiaRoutes = INDIA_ROUTE_CONFIG.map((cfg) => ({
-    ...calcIndiaRoute(cfg, inp, routeB),
+  const benchmark = {
+    ...calcB(inp),
+    id: 'B', origin: 'Ras Tanura', dest: 'Chiba', group: 'BENCHMARK',
+  };
+  const routeD = {
+    ...calcD(inp, benchmark),
+    id: 'D', origin: 'MAA', dest: 'Ningbo + Caojing', group: 'MAA',
+  };
+  const others = INDIA_ROUTE_CONFIG.map((cfg) => ({
+    ...calcIndiaRoute(cfg, inp, benchmark),
     id: cfg.id,
     origin: cfg.origin,
     dest: cfg.dest,
+    group: cfg.origin === 'MAA' ? 'MAA' : 'RUWAIS',
   }));
 
-  return [routeB, routeD, ...indiaRoutes];
+  return {
+    benchmark,
+    maaRoutes: [routeD, ...others.filter((r) => r.group === 'MAA')],
+    ruwaisRoutes: others.filter((r) => r.group === 'RUWAIS'),
+    all: [benchmark, routeD, ...others],
+  };
 }
 
 export { INDIA_ROUTE_CONFIG };

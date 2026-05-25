@@ -46,7 +46,9 @@ export default function InputPanel({ inputs: inp, onChange }) {
       <p className="text-xs text-tn-muted mb-2 font-mono">// blue cells from spreadsheet</p>
 
       <SectionTitle color="cyan">Market &amp; Vessel</SectionTitle>
-      <NumInput label="Freight Rate" id="frtRate" value={inp.frtRate} onChange={onChange} unit="$/MT" min={0} />
+      <p className="text-[10px] text-tn-muted -mt-0.5 mb-1 font-mono">
+        // target freight rate is the hero card ↑
+      </p>
       <NumInput label="In-Tank Qty" id="intankMT" value={inp.intankMT} onChange={onChange} unit="MT" min={0} />
       <NumInput label="IFO Price" id="ifoPrice" value={inp.ifoPrice} onChange={onChange} unit="$/MT" min={0} />
       <NumInput label="MDO Price" id="mdoPrice" value={inp.mdoPrice} onChange={onChange} unit="$/MT" min={0} />
