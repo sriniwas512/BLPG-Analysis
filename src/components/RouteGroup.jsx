@@ -162,9 +162,19 @@ function EditForm({ row, c, inputs, distanceMatrix, onEdit, onDelete, onReset, o
     ef('disPortSequence', newSeq);
     ef('namedDisPorts', named);
     ef('disPChgOverride', null); // let named ports drive the charge
-    // auto-update dest label
     if (newSeq.length > 0) {
       ef('dest', `${row.origin} → ${newSeq.join(' + ')}`);
+    }
+    // auto-fill miles for custom routes: ballast = last port → origin (direct), laden = chain sum
+    if (!row.isBuiltin && newSeq.length > 0 && distanceMatrix) {
+      const chain = [row.origin, ...newSeq];
+      let laden = 0;
+      for (let i = 0; i < chain.length - 1; i++) {
+        laden += distanceMatrix[chain[i]]?.[chain[i + 1]] || 0;
+      }
+      const ballast = distanceMatrix[newSeq[newSeq.length - 1]]?.[row.origin] || 0;
+      ef('miles_l', Math.round(laden * 100) / 100);
+      ef('miles_b', Math.round(ballast * 100) / 100);
     }
   }
 
@@ -279,7 +289,7 @@ function EditForm({ row, c, inputs, distanceMatrix, onEdit, onDelete, onReset, o
           <button
             onClick={applyFromMatrix}
             className={`text-[10px] font-mono px-2 py-0.5 rounded border ${c.btnBg} ${c.text} transition-colors ml-auto`}
-            title="Compute laden miles as sum of matrix legs; ballast as return leg"
+            title="Laden = chain sum of all legs; Ballast = direct from LAST port back to load port"
           >
             ↑ Auto-fill miles from matrix
           </button>
