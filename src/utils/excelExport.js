@@ -234,7 +234,7 @@ export function exportToExcel(inputs, results) {
     ws[r(3)]  = formula(`((${col}48*${col}43)+(${col}15+${col}16+${col}17+${col}19+${col}20+${col}21))/${COMMISSION}`, USD2);
     ws[r(4)]  = cell(45000, USD0);
     ws[r(7)]  = cell(1);
-    ws[r(8)]  = cell(col === 'G' || col === 'I' ? 2 : 3);
+    ws[r(8)]  = cell(col === 'U' || col === 'W' ? 3 : 2);
     ws[r(9)]  = formula(indiaRefIFO9[col], USD2);
     ws[r(10)] = formula(indiaRefIFO10[col], USD2);
     ws[r(11)] = cell(d.mb, DEC2);
