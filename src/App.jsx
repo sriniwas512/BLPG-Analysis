@@ -10,22 +10,33 @@ import RouteGroup from './components/RouteGroup.jsx';
 const fmtUsd0 = (v) =>
   v == null ? '–' : v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
+// Bump this whenever defaults change in a breaking way — forces cache clear on next load
+const STORAGE_VERSION = 'v3';
+
 function loadLS(key, fallback) {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; }
   catch { return fallback; }
+}
+
+function loadWithVersion(key, fallback) {
+  if (localStorage.getItem('blpg-version') !== STORAGE_VERSION) return fallback;
+  return loadLS(key, fallback);
 }
 
 export default function App() {
   const [inputs, setInputs] = useState(DEFAULT_INPUTS);
 
   const [routeConfigs, setRouteConfigs] = useState(
-    () => loadLS('blpg-route-configs', DEFAULT_ROUTE_CONFIGS)
+    () => loadWithVersion('blpg-route-configs', DEFAULT_ROUTE_CONFIGS)
   );
   const [distanceMatrix, setDistanceMatrix] = useState(
-    () => loadLS('blpg-distance-matrix', DEFAULT_DISTANCE_MATRIX)
+    () => loadWithVersion('blpg-distance-matrix', DEFAULT_DISTANCE_MATRIX)
   );
 
-  useEffect(() => { localStorage.setItem('blpg-route-configs', JSON.stringify(routeConfigs)); }, [routeConfigs]);
+  useEffect(() => {
+    localStorage.setItem('blpg-version', STORAGE_VERSION);
+    localStorage.setItem('blpg-route-configs', JSON.stringify(routeConfigs));
+  }, [routeConfigs]);
   useEffect(() => { localStorage.setItem('blpg-distance-matrix', JSON.stringify(distanceMatrix)); }, [distanceMatrix]);
 
   const r = useMemo(() => calculateAll(inputs, routeConfigs), [inputs, routeConfigs]);
