@@ -3,21 +3,34 @@
 @tailwind utilities;
 
 @layer base {
+  html, body, #root {
+    @apply h-full;
+  }
   body {
-    @apply bg-slate-100 text-slate-800;
+    @apply bg-tn-bg text-tn-fg font-sans antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }
 
 @layer components {
   .input-blue {
-    @apply bg-blue-100 border border-blue-400 rounded px-2 py-1 text-sm w-full
-           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-           text-right font-mono;
+    @apply bg-tn-bg-dark border border-tn-blue/40 rounded px-2 py-1 text-sm w-full
+           text-tn-cyan font-mono text-right
+           focus:outline-none focus:border-tn-cyan focus:ring-1 focus:ring-tn-cyan
+           hover:border-tn-blue transition-colors;
+  }
+  .input-blue::-webkit-outer-spin-button,
+  .input-blue::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
   .label-cell {
-    @apply text-xs font-medium text-slate-600 whitespace-nowrap pr-2;
-  }
-  .section-title {
-    @apply text-xs font-bold uppercase tracking-wider text-slate-500 col-span-full mt-3 mb-1 border-b border-slate-300 pb-1;
+    @apply text-xs font-medium text-tn-fg-dim whitespace-nowrap pr-2;
   }
 }
+
+/* Tokyo Night scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #16161e; }
+::-webkit-scrollbar-thumb { background: #414868; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #565f89; }
