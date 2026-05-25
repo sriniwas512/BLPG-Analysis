@@ -9,6 +9,7 @@ export const DEFAULT_INPUTS = {
   ifoPrice: 925,
   mdoPrice: 1495,
   awripB: 0,
+  commission: 3.975,   // address + brokerage, %
   spdBlst: 16,
   spdLadn: 16,
   blstIFO: 45,
@@ -180,14 +181,16 @@ function calcIndiaRoute(cfg, inp, bResults) {
   const disPChg    = computeDisPChg(cfg, inp);
   const portChg    = cfg.loadPChg + disPChg;
 
+  const commRate     = (inp.commission ?? 3.975) / 100;
+  const netFactor    = 1 - commRate;
   const nonCommissionCosts = cfg.awrip + bunkerCost + portChg;
   const tce          = bResults.ratePerDay;
-  const totalFreight = (tce * totalDays + nonCommissionCosts) / 0.96025;
-  const commission   = totalFreight * 0.03975;
+  const totalFreight = (tce * totalDays + nonCommissionCosts) / netFactor;
+  const commission   = totalFreight * commRate;
   const totalCost    = cfg.awrip + commission + bunkerCost + portChg;
   const frtRatePerMT = totalFreight / cfg.intank;
 
-  const impliedTce = (totalFreight * 0.96025 - cfg.awrip - bunkerCost - portChg) / totalDays;
+  const impliedTce = (totalFreight * netFactor - cfg.awrip - bunkerCost - portChg) / totalDays;
 
   return {
     frtRatePerMT,
@@ -199,6 +202,7 @@ function calcIndiaRoute(cfg, inp, bResults) {
     ratePerDay: tce,
     tce,
     impliedTce,
+    commRate,
     tcePlusBunk: tce + inp.portIFO * inp.ifoPrice,
   };
 }

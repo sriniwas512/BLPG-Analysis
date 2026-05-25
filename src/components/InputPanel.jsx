@@ -65,6 +65,13 @@ export default function InputPanel({ inputs: inp, onChange, distanceMatrix, onMa
       <NumInput label="Dis Port Chg" id="disPChgB" value={inp.disPChgB} onChange={onChange} unit="$" min={0} />
       <NumInput label="AWRIP" id="awripB" value={inp.awripB} onChange={onChange} unit="$" min={0} />
 
+      <SectionTitle color="purple">India Routes — All</SectionTitle>
+      <NumInput label="Commission" id="commission" value={inp.commission} onChange={onChange} unit="%" step={0.001} min={0} max={10}
+        tooltip="Address + brokerage commission applied to all India route gross freight" />
+      <div className="text-[10px] text-tn-muted font-mono -mt-0.5 mb-1 pl-1">
+        Gross factor: {((1 - (inp.commission ?? 3.975) / 100) * 100).toFixed(4)}% · applies to all Ruwais routes
+      </div>
+
       <SectionTitle color="green">Vessel Performance</SectionTitle>
       <NumInput label="Speed Ballast" id="spdBlst" value={inp.spdBlst} onChange={onChange} unit="kn" min={1} />
       <NumInput label="Speed Laden" id="spdLadn" value={inp.spdLadn} onChange={onChange} unit="kn" min={1} />

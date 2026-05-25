@@ -206,6 +206,7 @@ export default function App() {
             color="orange"
             routes={r.ruwaisRoutes}
             benchmarkRate={benchmark.ratePerDay}
+            inputs={inputs}
             distanceMatrix={distanceMatrix}
             onAdd={() => handleAddRoute('Ruwais')}
             onEdit={handleUpdateRoute}

@@ -428,7 +428,11 @@ function EditForm({ row, c, inputs, distanceMatrix, onEdit, onDelete, onReset, o
 // ── TCE breakdown popover ─────────────────────────────────────────────────────
 
 function TcePopover({ row, onClose }) {
-  const net = row.totalFreight * 0.96025 - row.awrip - row.bunkerCost - row.portChg;
+  const commRate = row.commRate ?? 0.03975;
+  const netFactor = 1 - commRate;
+  const net = row.totalFreight * netFactor - row.awrip - row.bunkerCost - row.portChg;
+  const pct = (commRate * 100).toFixed(3);
+  const netPct = (netFactor * 100).toFixed(4);
   return (
     <div className="absolute z-50 top-full right-0 mt-1 w-[360px] bg-tn-bg-dark border border-tn-cyan/30
                     rounded-lg p-4 shadow-2xl shadow-black/50 text-left">
@@ -441,13 +445,13 @@ function TcePopover({ row, onClose }) {
 
       <div className="font-mono text-[11px] space-y-2">
         <div className="text-tn-muted leading-relaxed">
-          ( Gross Earnings × 0.96025 − AWRIP − Bunker − Port Chg ) ÷ Total Days
+          ( Gross Earnings × {netPct}% − AWRIP − Bunker − Port Chg ) ÷ Total Days
         </div>
 
         <div className="bg-tn-bg rounded p-3 border border-tn-border leading-relaxed text-tn-fg-dim space-y-0.5">
           <div className="flex justify-between gap-4">
-            <span className="text-tn-muted">Gross Earnings × 0.96025</span>
-            <span className="text-tn-fg">${fmt0(row.totalFreight * 0.96025)}</span>
+            <span className="text-tn-muted">Gross Earnings × {netPct}% <span className="text-tn-border">(net of {pct}% comm)</span></span>
+            <span className="text-tn-fg">${fmt0(row.totalFreight * netFactor)}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-tn-muted">− AWRIP</span>
