@@ -109,12 +109,12 @@ export default function InputPanel({ inputs: inp, onChange, distanceMatrix, onMa
 
       {matrixOpen && (
         <div className="overflow-x-auto -mx-2 mt-1">
-          <table className="border-collapse text-[9px] font-mono w-max">
+          <table className="border-collapse text-xs font-mono w-max">
             <thead>
               <tr>
                 <th className="w-8 sticky left-0 bg-tn-bg-alt z-10" />
                 {DISTANCE_PORTS.map((p) => (
-                  <th key={p} className="px-0.5 pb-1 text-tn-muted text-center" style={{ width: 52 }}>
+                  <th key={p} className="px-1 pb-1 text-tn-muted text-center" style={{ width: 60 }}>
                     {PORT_SHORT[p]}
                   </th>
                 ))}
@@ -123,22 +123,22 @@ export default function InputPanel({ inputs: inp, onChange, distanceMatrix, onMa
             <tbody>
               {DISTANCE_PORTS.map((from) => (
                 <tr key={from}>
-                  <td className="pr-1 text-tn-fg-dim font-medium sticky left-0 bg-tn-bg-alt z-10 whitespace-nowrap">
+                  <td className="pr-2 text-tn-fg-dim font-medium sticky left-0 bg-tn-bg-alt z-10 whitespace-nowrap">
                     {PORT_SHORT[from]}
                   </td>
                   {DISTANCE_PORTS.map((to) => (
                     <td key={to} className="p-0.5">
                       {from === to ? (
-                        <div className="w-[50px] text-center text-tn-border select-none">—</div>
+                        <div className="w-[58px] text-center text-tn-border select-none">—</div>
                       ) : (
                         <input
                           type="number" step="0.01" min={0}
                           value={distanceMatrix[from]?.[to] ?? 0}
                           onChange={(e) => onMatrixChange(from, to, parseFloat(e.target.value) || 0)}
-                          className="w-[50px] bg-tn-bg-dark border border-tn-border/50 rounded px-1
+                          className="w-[58px] bg-tn-bg-dark border border-tn-border/50 rounded px-1
                                      text-tn-cyan text-right focus:outline-none focus:border-tn-cyan
                                      focus:ring-1 focus:ring-tn-cyan/30 transition-colors"
-                          style={{ fontSize: 9, height: 20 }}
+                          style={{ fontSize: 11, height: 22 }}
                         />
                       )}
                     </td>
@@ -147,7 +147,7 @@ export default function InputPanel({ inputs: inp, onChange, distanceMatrix, onMa
               ))}
             </tbody>
           </table>
-          <p className="text-[9px] text-tn-muted mt-1.5 px-2 font-mono leading-relaxed">
+          <p className="text-[10px] text-tn-muted mt-1.5 px-2 font-mono leading-relaxed">
             Symmetric — editing one cell updates its mirror.<br/>
             Used to auto-fill laden miles on custom routes.
           </p>
