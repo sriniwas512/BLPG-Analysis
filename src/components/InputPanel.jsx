@@ -65,13 +65,6 @@ export default function InputPanel({ inputs: inp, onChange, distanceMatrix, onMa
       <NumInput label="Dis Port Chg" id="disPChgB" value={inp.disPChgB} onChange={onChange} unit="$" min={0} />
       <NumInput label="AWRIP" id="awripB" value={inp.awripB} onChange={onChange} unit="$" min={0} />
 
-      <SectionTitle color="purple">Route D — MAA → Ningbo+Caojing</SectionTitle>
-      <NumInput label="Miles Ballast" id="milesBallastD" value={inp.milesBallastD} onChange={onChange} unit="nm" min={0} />
-      <NumInput label="Miles Laden" id="milesLadenD" value={inp.milesLadenD} onChange={onChange} unit="nm" min={0} />
-      <NumInput label="Load Port Chg" id="loadPChgD" value={inp.loadPChgD} onChange={onChange} unit="$" min={0} />
-      <NumInput label="Dis Port Chg" id="disPChgD" value={inp.disPChgD} onChange={onChange} unit="$" min={0} />
-      <NumInput label="Days Disch" id="daysDischD" value={inp.daysDischD} onChange={onChange} unit="days" step={0.5} min={0} />
-
       <SectionTitle color="green">Vessel Performance</SectionTitle>
       <NumInput label="Speed Ballast" id="spdBlst" value={inp.spdBlst} onChange={onChange} unit="kn" min={1} />
       <NumInput label="Speed Laden" id="spdLadn" value={inp.spdLadn} onChange={onChange} unit="kn" min={1} />

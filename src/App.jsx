@@ -45,12 +45,12 @@ export default function App() {
 
   function handleAddRoute(origin) {
     const id = 'custom_' + Date.now();
-    const defaultPort = origin === 'MAA' ? 'Vizag' : 'NMG';
+    const defaultPort = 'NMG';
     setRouteConfigs((prev) => [...prev, {
       id, origin,
       dest: `${origin} → ${defaultPort}`,
       miles_b: 0, miles_l: 0,
-      loadPChg: origin === 'MAA' ? 12000 : 32000,
+      loadPChg: 32000,
       namedDisPorts: [PORT_CHARGE_KEY[defaultPort]].filter(Boolean),
       fixedDisPChgExtra: 0, disPChgOverride: null,
       awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
@@ -187,21 +187,6 @@ export default function App() {
               <DetailItem label="Total Revenue" value={`$${fmtUsd0(benchmark.totalCost)}`} />
             </div>
           </section>
-
-          {/* ── MAA ORIGIN ───────────────────────────────────────── */}
-          <RouteGroup
-            title="MAA Origin"
-            description="Total gross earnings (USD per voyage) bid on each route, scaled so TCE equals the benchmark $/day."
-            color="purple"
-            routes={r.maaRoutes}
-            benchmarkRate={benchmark.ratePerDay}
-            inputs={inputs}
-            distanceMatrix={distanceMatrix}
-            onAdd={() => handleAddRoute('MAA')}
-            onEdit={handleUpdateRoute}
-            onDelete={handleDeleteRoute}
-            onReset={handleResetRoute}
-          />
 
           {/* ── RUWAIS ORIGIN ────────────────────────────────────── */}
           <RouteGroup

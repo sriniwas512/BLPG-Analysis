@@ -40,10 +40,8 @@ export function exportToExcel(inputs, results) {
 
   // ── Header rows ──────────────────────────────────────────────────────────
   ws['B1'] = cell('Ras Tanura');
-  ws['D1'] = cell('MAA');
   ws['G1'] = cell('Ruwais');
   ws['I1'] = cell('Ruwais');
-  ws['K1'] = cell('MAA');
   ws['M1'] = cell('Ruwais');
   ws['O1'] = cell('Ruwais');
   ws['Q1'] = cell('Ruwais');
@@ -52,10 +50,8 @@ export function exportToExcel(inputs, results) {
   ws['W1'] = cell('Ruwais');
 
   ws['B2'] = cell('Chiba');
-  ws['D2'] = cell('Ningbo + Caojing');
   ws['G2'] = cell('NMG + Haldia');
   ws['I2'] = cell('NMG + Mumbai');
-  ws['K2'] = cell('Vizag + Haldia');
   ws['M2'] = cell('STS Haldia + Haldia');
   ws['O2'] = cell('New Mangalore');
   ws['Q2'] = cell('NMG + Dahej');
@@ -137,52 +133,10 @@ export function exportToExcel(inputs, results) {
   ws['B47'] = formula('B6', USD2);
   ws['B48'] = formula('B6+B28*B9', USD2);
 
-  // ── Column D ──────────────────────────────────────────────────────────────
-  ws['D3']  = formula('ROUND(D22/D4,2)',  USD2);
-  ws['D4']  = cell(inp.intankMT,          USD0);
-  ws['D5']  = formula('B5',              USD2);
-  ws['D6']  = formula('B6',              USD2);
-  ws['D7']  = cell(1);
-  ws['D8']  = cell(3);
-  ws['D9']  = formula('B9',              USD2);
-  ws['D10'] = formula('B10',             USD2);
-  ws['D11'] = cell(inp.milesBallastD,    DEC2);
-  ws['D12'] = cell(inp.milesLadenD,      DEC2);
-  ws['D13'] = cell(inp.loadPChgD,        USD0);
-  ws['D14'] = cell(inp.disPChgD,         USD0);
-  ws['D15'] = cell(0);
-  ws['D19'] = formula('ROUND(D6*D43,2)', USD0);
-  ws['D20'] = formula('D44*D9+D45*D10',  USD0);
-  ws['D21'] = formula('D13+D14+D15',     USD0);
-  ws['D22'] = formula('D19+D20+D21',     USD0);
-  ws['D24'] = cell(inp.spdBlst,          DEC2);
-  ws['D25'] = cell(inp.spdLadn,          DEC2);
-  ws['D26'] = formula('B26',             DEC2);
-  ws['D27'] = formula('B27',             DEC2);
-  ws['D28'] = formula('B28',             DEC2);
-  ws['D29'] = formula('B29');
-  ws['D30'] = cell(0.1,                  DEC2);
-  ws['D31'] = formula('B31',             DEC2);
-  ws['D32'] = formula('B32',             DEC2);
-  ws['D33'] = formula('((D11*(1+D42))/D24/24)', DEC2);
-  ws['D34'] = formula('((D12*(1+D42))/D25/24)', DEC2);
-  ws['D35'] = formula('D33+D34',         DEC2);
-  ws['D36'] = cell(0.5);
-  ws['D37'] = cell(2);
-  ws['D38'] = cell(inp.daysDischD,       DEC2);
-  ws['D39'] = cell(0.5);
-  ws['D40'] = cell(0);
-  ws['D41'] = cell(0);
-  ws['D42'] = formula('B42',             PCT);
-  ws['D43'] = formula('D35+D36+D37+D38+D39+D40+D41', DEC2);
-  ws['D44'] = formula('D26*D33+D27*D34+(D36+D37+D38+D39+D40+D41)*D28', DEC2);
-  ws['D45'] = formula('D30*D35+D31*(D36+D37+D38+D39+D40+D41)',           DEC2);
-
   // ── India route fixed data ─────────────────────────────────────────────────
   const indiaFixedData = {
     G: { mb: 3282, ml: 3328, lpc: 32000, disPChgFormula: 'Z4+Z7',    awrip: 40000, np6: 0.75, dl: 2, dd: 10, seaFactor: '1.05', mdo_cell: 'G31' },
     I: { mb: 1362, ml: 2031, lpc: 32000, disPChgFormula: 'Z9+Z4',    awrip: 40000, np6: 0.75, dl: 2, dd: 10, seaFactor: '1.05', mdo_cell: 'I31' },
-    K: { mb: 3487, ml: 3580, lpc: 12000, disPChgFormula: 'Z6+Z7',    awrip: 40000, np6: 0.75, dl: 2, dd: 11, seaFactor: '1.05', mdo_cell: 'K32' },
     M: { mb: 3282, ml: 3283, lpc: 32000, disPChgFormula: 'Z7+Z8',    awrip: 40000, np6: 0.75, dl: 2, dd: 10, seaFactor: '1.05', mdo_cell: 'M32' },
     O: { mb: 1612, ml: 1620, lpc: 32000, disPChgFormula: 'Z4',       awrip: 40000, np6: 0.75, dl: 2, dd: 10, seaFactor: '1.05', mdo_cell: 'O32' },
     Q: { mb: 1306, ml: 2221, lpc: 32000, disPChgFormula: 'Z3+Z4',    awrip: 40000, np6: 0.75, dl: 2, dd: 10, seaFactor: '1.05', mdo_cell: 'Q32' },
@@ -192,40 +146,40 @@ export function exportToExcel(inputs, results) {
   };
 
   const indiaRefSpeeds = {
-    G: 'B24', I: 'B24', K: 'B24', M: 'B24', O: 'D24', Q: 'D24', S: 'D24', U: 'B24', W: 'D24',
+    G: 'B24', I: 'B24', M: 'B24', O: 'D24', Q: 'D24', S: 'D24', U: 'B24', W: 'D24',
   };
   const indiaRefSpeedsL = {
-    G: 'B25', I: 'B25', K: 'B25', M: 'B25', O: 'D25', Q: 'D25', S: 'D25', U: 'B25', W: 'D25',
+    G: 'B25', I: 'B25', M: 'B25', O: 'D25', Q: 'D25', S: 'D25', U: 'B25', W: 'D25',
   };
   const indiaRefIFO9 = {
-    G: 'B9', I: 'B9', K: 'B9', M: 'B9', O: 'D9', Q: 'F9', S: 'H9', U: 'B9', W: 'D9',
+    G: 'B9', I: 'B9', M: 'B9', O: 'B9', Q: 'B9', S: 'B9', U: 'B9', W: 'B9',
   };
   const indiaRefIFO10 = {
-    G: 'B10', I: 'B10', K: 'B10', M: 'B10', O: 'D10', Q: 'F10', S: 'H10', U: 'B10', W: 'D10',
+    G: 'B10', I: 'B10', M: 'B10', O: 'B10', Q: 'B10', S: 'B10', U: 'B10', W: 'B10',
   };
   const indiaRefIFO26 = {
-    G: 'B26', I: 'B26', K: 'B26', M: 'B26', O: 'D26', Q: 'D26', S: 'D26', U: 'B26', W: 'D26',
+    G: 'B26', I: 'B26', M: 'B26', O: 'B26', Q: 'B26', S: 'B26', U: 'B26', W: 'B26',
   };
   const indiaRefIFO27 = {
-    G: 'B27', I: 'B27', K: 'B27', M: 'B27', O: 'D27', Q: 'D27', S: 'D27', U: 'B27', W: 'D27',
+    G: 'B27', I: 'B27', M: 'B27', O: 'B27', Q: 'B27', S: 'B27', U: 'B27', W: 'B27',
   };
   const indiaRefIFO28 = {
-    G: 'B28', I: 'B28', K: 'B28', M: 'B28', O: 'D28', Q: 'D28', S: 'D28', U: 'B28', W: 'D28',
+    G: 'B28', I: 'B28', M: 'B28', O: 'B28', Q: 'B28', S: 'B28', U: 'B28', W: 'B28',
   };
   const indiaRefIFO29 = {
-    G: 'B29', I: 'B29', K: 'B29', M: 'B29', O: 'D29', Q: 'F29', S: 'H29', U: 'B29', W: 'D29',
+    G: 'B29', I: 'B29', M: 'B29', O: 'B29', Q: 'B29', S: 'B29', U: 'B29', W: 'B29',
   };
   const indiaRefMDO30 = {
-    G: 'B30', I: 'B30', K: 'B30', M: 'B30', O: 'D30', Q: 'D30', S: 'D30', U: 'B30', W: 'D30',
+    G: 'B30', I: 'B30', M: 'B30', O: 'B30', Q: 'B30', S: 'B30', U: 'B30', W: 'B30',
   };
   const indiaRefMDO31 = {
-    G: 'B31', I: 'B31', K: 'B31', M: 'B31', O: 'D31', Q: 'D31', S: 'D31', U: 'B31', W: 'D31',
+    G: 'B31', I: 'B31', M: 'B31', O: 'B31', Q: 'B31', S: 'B31', U: 'B31', W: 'B31',
   };
   const indiaRefMDO32 = {
-    G: 'B32', I: 'B32', K: 'B32', M: 'B32', O: 'D32', Q: 'D32', S: 'D32', U: 'B32', W: 'D32',
+    G: 'B32', I: 'B32', M: 'B32', O: 'B32', Q: 'B32', S: 'B32', U: 'B32', W: 'B32',
   };
   const indiaRefSM = {
-    G: 'B42', I: 'D42', K: 'B42', M: 'D42', O: 'D42', Q: 'D42', S: 'D42', U: 'B42', W: 'D42',
+    G: 'B42', I: 'B42', M: 'B42', O: 'B42', Q: 'B42', S: 'B42', U: 'B42', W: 'B42',
   };
 
   Object.entries(indiaFixedData).forEach(([col, d]) => {
