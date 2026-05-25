@@ -19,6 +19,7 @@ export default function RouteGroup({
 }) {
   const [expandedId, setExpandedId] = useState(null);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [tcePopoverId, setTcePopoverId] = useState(null);
   if (!routes || routes.length === 0) return null;
   const c = COLOR_MAP[color];
 
@@ -117,7 +118,18 @@ export default function RouteGroup({
                     </td>
 
                     <Td>{fmtD(row.totalDays)}</Td>
-                    <Td>${fmt0(row.impliedTce)}</Td>
+                    <td className="px-3 py-2 relative text-right font-mono text-xs whitespace-nowrap text-tn-fg-dim">
+                      <button
+                        onClick={() => setTcePopoverId(tcePopoverId === row.id ? null : row.id)}
+                        className="underline decoration-dotted hover:text-tn-cyan transition-colors"
+                        title="Click to see formula"
+                      >
+                        ${fmt0(row.impliedTce)}
+                      </button>
+                      {tcePopoverId === row.id && (
+                        <TcePopover row={row} onClose={() => setTcePopoverId(null)} />
+                      )}
+                    </td>
 
                     {showBreakdown && (
                       <>
@@ -408,6 +420,61 @@ function EditForm({ row, c, inputs, distanceMatrix, onEdit, onDelete, onReset, o
         >
           ✓ Done
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ── TCE breakdown popover ─────────────────────────────────────────────────────
+
+function TcePopover({ row, onClose }) {
+  const net = row.totalFreight * 0.96025 - row.awrip - row.bunkerCost - row.portChg;
+  return (
+    <div className="absolute z-50 top-full right-0 mt-1 w-[360px] bg-tn-bg-dark border border-tn-cyan/30
+                    rounded-lg p-4 shadow-2xl shadow-black/50 text-left">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-tn-cyan font-bold">
+          Implied TCE / Day — {row.dest}
+        </div>
+        <button onClick={onClose} className="text-tn-muted hover:text-tn-fg text-xs leading-none ml-2 flex-shrink-0">✕</button>
+      </div>
+
+      <div className="font-mono text-[11px] space-y-2">
+        <div className="text-tn-muted leading-relaxed">
+          ( Gross Earnings × 0.96025 − AWRIP − Bunker − Port Chg ) ÷ Total Days
+        </div>
+
+        <div className="bg-tn-bg rounded p-3 border border-tn-border leading-relaxed text-tn-fg-dim space-y-0.5">
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">Gross Earnings × 0.96025</span>
+            <span className="text-tn-fg">${fmt0(row.totalFreight * 0.96025)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">− AWRIP</span>
+            <span className="text-tn-red">−${fmt0(row.awrip)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">− Bunker</span>
+            <span className="text-tn-red">−${fmt0(row.bunkerCost)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">− Port Charges</span>
+            <span className="text-tn-red">−${fmt0(row.portChg)}</span>
+          </div>
+          <div className="flex justify-between gap-4 pt-1 border-t border-tn-border/60 mt-1">
+            <span className="text-tn-muted">Net hire</span>
+            <span className="text-tn-fg font-bold">${fmt0(net)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">÷ Total Days</span>
+            <span className="text-tn-fg">{fmtD(row.totalDays)} d</span>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-baseline pt-1 border-t border-tn-border">
+          <span className="text-tn-muted text-[10px]">= Implied TCE/Day</span>
+          <span className="text-tn-cyan font-bold text-base">${fmt0(row.impliedTce)}<span className="text-tn-muted text-xs font-normal">/day</span></span>
+        </div>
       </div>
     </div>
   );

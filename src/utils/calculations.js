@@ -13,7 +13,8 @@ export const DEFAULT_INPUTS = {
   spdLadn: 16,
   blstIFO: 45,
   ladnIFO: 45,
-  portIFO: 11,
+  portIFO: 10,
+  idleIFO: 5,
   seaMDO: 0.1,
   portMDO: 0.1,
   idleMDO: 0.1,
@@ -136,7 +137,9 @@ function calcB(inp) {
   const portDaysFactors = inp.norPlus6B + inp.daysLoadingB + inp.daysDischB + inp.daysBunB; // B36+B37+B38+B39
   const totalDays = voyageDays + portDaysFactors;                                 // B43
 
-  const ifoMT = inp.blstIFO * blstDays + inp.ladnIFO * ladnDays + portDaysFactors * inp.portIFO; // B44
+  const workingPortDaysB = inp.daysLoadingB + inp.daysDischB + inp.daysBunB;
+  const ifoMT = inp.blstIFO * blstDays + inp.ladnIFO * ladnDays
+    + workingPortDaysB * inp.portIFO + inp.norPlus6B * inp.idleIFO;              // B44
   const mdoMT = inp.seaMDO * voyageDays + inp.portMDO * portDaysFactors;                          // B45
 
   const bunkerCost = ifoMT * inp.ifoPrice + mdoMT * inp.mdoPrice; // B20
@@ -170,7 +173,9 @@ function calcIndiaRoute(cfg, inp, bResults) {
   const portDaysFactors = cfg.norPlus6 + cfg.daysLoading + cfg.daysDisch + cfg.daysBun;
   const totalDays = voyageDays + portDaysFactors;
 
-  const ifoMT = voyageDays * inp.ladnIFO + portDaysFactors * inp.portIFO;
+  const workingPortDays = cfg.daysLoading + cfg.daysDisch + cfg.daysBun;
+  const ifoMT = voyageDays * inp.ladnIFO
+    + workingPortDays * inp.portIFO + cfg.norPlus6 * inp.idleIFO;
   const mdoSumDays = blstDays + ladnDays + voyageDays + portDaysFactors;
   const mdoRate = cfg.mdo_rate === 'portMDO' ? inp.portMDO : inp.idleMDO;
   const mdoMT = mdoSumDays * mdoRate;
