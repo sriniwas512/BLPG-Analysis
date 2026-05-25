@@ -10,7 +10,7 @@ const COLOR_MAP = {
   cyan:   { text: 'text-tn-cyan',   border: 'border-tn-cyan/40',   bg: 'bg-tn-cyan/10',   ring: 'shadow-tn-cyan/5' },
 };
 
-export default function RouteGroup({ title, description, color = 'purple', routes, benchmarkRate, onFreightChange }) {
+export default function RouteGroup({ title, description, color = 'purple', routes, benchmarkRate }) {
   if (!routes || routes.length === 0) return null;
   const c = COLOR_MAP[color];
 
@@ -29,7 +29,7 @@ export default function RouteGroup({ title, description, color = 'purple', route
         </div>
         {benchmarkRate != null && (
           <div className="text-right">
-            <div className="text-[10px] text-tn-muted uppercase tracking-wider font-mono">Benchmark hire</div>
+            <div className="text-[10px] text-tn-muted uppercase tracking-wider font-mono">TCE (all routes)</div>
             <div className="text-sm font-mono font-bold text-tn-yellow">
               ${fmt0(benchmarkRate)}<span className="text-tn-muted text-xs font-normal">/day</span>
             </div>
@@ -45,8 +45,8 @@ export default function RouteGroup({ title, description, color = 'purple', route
                              border-b border-tn-border sticky left-0 bg-tn-bg-dark z-10 min-w-[200px]">
                 Route
               </th>
-              <Th sub="$/pmt · editable">Freight Rate</Th>
-              <Th highlight>Gross Hire</Th>
+              <Th highlight sub="USD · per voyage">Gross Total Earnings</Th>
+              <Th sub="$/pmt">Implied Freight</Th>
               <Th sub="days">Total Days</Th>
               <Th sub="days">Sea Days</Th>
               <Th sub="$">Bunker</Th>
@@ -61,32 +61,20 @@ export default function RouteGroup({ title, description, color = 'purple', route
                   <RouteLabel id={row.id} origin={row.origin} dest={row.dest} color={c} />
                 </td>
 
-                {/* Editable freight rate per route */}
+                {/* PRIMARY: total gross earnings for the voyage (what owner bids in tender) */}
                 <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <div className="flex flex-col items-end gap-0.5">
-                    <div className="flex items-center gap-1">
-                      <span className="text-tn-muted text-xs font-mono">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min={0}
-                        value={row.frtRatePerMT}
-                        onChange={(e) => onFreightChange && onFreightChange(row.id, parseFloat(e.target.value) || 0)}
-                        className="input-blue w-20"
-                      />
-                      <span className="text-[10px] text-tn-muted font-mono">/pmt</span>
-                    </div>
-                    {row.breakEvenFrtPerMT != null && (
-                      <div className="text-[10px] font-mono text-tn-muted leading-none">
-                        b/e {fmt2(row.breakEvenFrtPerMT)}
-                      </div>
-                    )}
-                  </div>
+                  <span className={`${c.bg} ${c.text} px-2.5 py-1 rounded border ${c.border}
+                                    font-mono font-bold text-sm`}>
+                    ${fmt0(row.totalFreight)}
+                  </span>
                 </td>
 
-                {/* Primary output: gross hire $/day */}
+                {/* Implied freight per MT */}
                 <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <GrossHireCell value={row.ratePerDay} benchmark={benchmarkRate} c={c} />
+                  <span className="font-mono text-tn-fg text-xs">
+                    ${fmt2(row.frtRatePerMT)}
+                    <span className="text-[10px] text-tn-muted ml-1">/pmt</span>
+                  </span>
                 </td>
 
                 <Td>{fmtD(row.totalDays)}</Td>
@@ -100,26 +88,6 @@ export default function RouteGroup({ title, description, color = 'purple', route
         </table>
       </div>
     </section>
-  );
-}
-
-function GrossHireCell({ value, benchmark, c }) {
-  const diff = benchmark != null ? value - benchmark : null;
-  const isAbove = diff != null && diff >= 0;
-
-  return (
-    <div className="flex flex-col items-end gap-0.5">
-      <span className={`${c.bg} ${c.text} px-2.5 py-1 rounded border ${c.border}
-                        font-mono font-bold text-sm`}>
-        ${fmt0(value)}
-        <span className="text-[10px] text-tn-muted ml-1 font-normal">/day</span>
-      </span>
-      {diff != null && (
-        <div className={`text-[10px] font-mono leading-none ${isAbove ? 'text-tn-green' : 'text-tn-red'}`}>
-          {isAbove ? '▲' : '▼'} ${fmt0(Math.abs(diff))}/d
-        </div>
-      )}
-    </div>
   );
 }
 

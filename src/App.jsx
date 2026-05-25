@@ -78,7 +78,7 @@ export default function App() {
                 </div>
               </div>
               <div className="text-right text-xs text-tn-muted">
-                Reference voyage — benchmark hire<br/>used for route comparisons below
+                Baltic $/pmt → TCE $/day<br/>scales every route's bid below
               </div>
             </div>
 
@@ -110,7 +110,7 @@ export default function App() {
               {/* Output */}
               <div className="bg-tn-bg-dark/60 rounded-lg border border-tn-yellow/30 p-4">
                 <div className="text-[10px] uppercase tracking-widest text-tn-yellow font-bold mb-1">
-                  ② Resulting Gross Charter Rate
+                  ② TCE (locks every other route)
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl text-tn-yellow font-mono">$</span>
@@ -139,21 +139,19 @@ export default function App() {
           {/* ── MAA ORIGIN ───────────────────────────────────────── */}
           <RouteGroup
             title="MAA Origin"
-            description="Gross hire ($/day) per route — enter the freight rate you expect on each route to see what hire it supports. Break-even shown for reference."
+            description="Total gross earnings (USD per voyage) the owner bids on each route, scaled so TCE equals the benchmark $/day. Implied $/pmt shown for reference."
             color="purple"
             routes={r.maaRoutes}
             benchmarkRate={benchmark.ratePerDay}
-            onFreightChange={(id, val) => handleChange('frtRate_' + id, val)}
           />
 
           {/* ── RUWAIS ORIGIN ────────────────────────────────────── */}
           <RouteGroup
             title="Ruwais Origin"
-            description="Gross hire ($/day) per route — enter the freight rate you expect on each route to see what hire it supports. Break-even shown for reference."
+            description="Total gross earnings (USD per voyage) the owner bids on each route, scaled so TCE equals the benchmark $/day. Implied $/pmt shown for reference."
             color="orange"
             routes={r.ruwaisRoutes}
             benchmarkRate={benchmark.ratePerDay}
-            onFreightChange={(id, val) => handleChange('frtRate_' + id, val)}
           />
 
         </main>
