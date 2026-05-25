@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { DISTANCE_PORTS, PORT_SHORT } from '../utils/calculations.js';
+
 function NumInput({ label, id, value, onChange, unit, min, step = 'any', tooltip }) {
   return (
     <div className="flex items-center gap-1 py-0.5">
@@ -7,9 +10,7 @@ function NumInput({ label, id, value, onChange, unit, min, step = 'any', tooltip
       </label>
       <input
         id={id}
-        type="number"
-        step={step}
-        min={min}
+        type="number" step={step} min={min}
         value={value}
         onChange={(e) => onChange(id, parseFloat(e.target.value) || 0)}
         className="input-blue w-24"
@@ -18,7 +19,7 @@ function NumInput({ label, id, value, onChange, unit, min, step = 'any', tooltip
   );
 }
 
-function SectionTitle({ children, color = 'blue' }) {
+function SectionTitle({ children, color = 'blue', action }) {
   const colorClass = {
     blue:   'text-tn-blue border-tn-blue/40',
     cyan:   'text-tn-cyan border-tn-cyan/40',
@@ -26,17 +27,21 @@ function SectionTitle({ children, color = 'blue' }) {
     yellow: 'text-tn-yellow border-tn-yellow/40',
     green:  'text-tn-green border-tn-green/40',
     orange: 'text-tn-orange border-tn-orange/40',
+    red:    'text-tn-red border-tn-red/40',
   }[color];
 
   return (
-    <div className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}
-                    bg-tn-bg-dark border-l-2 px-2 py-1 mt-4 mb-1 -mx-2 rounded-sm font-mono`}>
-      {children}
+    <div className={`flex items-center justify-between text-[10px] font-bold uppercase tracking-widest
+                    ${colorClass} bg-tn-bg-dark border-l-2 px-2 py-1 mt-4 mb-1 -mx-2 rounded-sm font-mono`}>
+      <span>{children}</span>
+      {action}
     </div>
   );
 }
 
-export default function InputPanel({ inputs: inp, onChange }) {
+export default function InputPanel({ inputs: inp, onChange, distanceMatrix, onMatrixChange }) {
+  const [matrixOpen, setMatrixOpen] = useState(true);
+
   return (
     <div className="bg-tn-bg-alt rounded-xl shadow-lg p-4 space-y-0 text-sm border border-tn-border">
       <h2 className="font-bold text-tn-fg text-base mb-1 flex items-center gap-2">
@@ -93,6 +98,68 @@ export default function InputPanel({ inputs: inp, onChange }) {
       <NumInput label="Haldia STS" id="portHaldSTS" value={inp.portHaldSTS} onChange={onChange} unit="$" min={0} />
       <NumInput label="Mumbai" id="portMumbai" value={inp.portMumbai} onChange={onChange} unit="$" min={0} />
       <NumInput label="Krishnapatnam" id="portKrishnapatnam" value={inp.portKrishnapatnam} onChange={onChange} unit="$" min={0} />
+
+      {/* ── Distance Matrix ──────────────────────────────────── */}
+      <SectionTitle
+        color="red"
+        action={
+          <button
+            onClick={() => setMatrixOpen((o) => !o)}
+            className="text-tn-muted hover:text-tn-fg text-[10px] normal-case tracking-normal font-normal ml-2"
+          >
+            {matrixOpen ? '▲ hide' : '▼ show'}
+          </button>
+        }
+      >
+        Distance Matrix (nm)
+      </SectionTitle>
+
+      {matrixOpen && (
+        <div className="overflow-x-auto -mx-2 mt-1">
+          <table className="border-collapse text-[9px] font-mono w-max">
+            <thead>
+              <tr>
+                <th className="w-8 sticky left-0 bg-tn-bg-alt z-10" />
+                {DISTANCE_PORTS.map((p) => (
+                  <th key={p} className="px-0.5 pb-1 text-tn-muted text-center" style={{ width: 52 }}>
+                    {PORT_SHORT[p]}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {DISTANCE_PORTS.map((from) => (
+                <tr key={from}>
+                  <td className="pr-1 text-tn-fg-dim font-medium sticky left-0 bg-tn-bg-alt z-10 whitespace-nowrap">
+                    {PORT_SHORT[from]}
+                  </td>
+                  {DISTANCE_PORTS.map((to) => (
+                    <td key={to} className="p-0.5">
+                      {from === to ? (
+                        <div className="w-[50px] text-center text-tn-border select-none">—</div>
+                      ) : (
+                        <input
+                          type="number" step="0.01" min={0}
+                          value={distanceMatrix[from]?.[to] ?? 0}
+                          onChange={(e) => onMatrixChange(from, to, parseFloat(e.target.value) || 0)}
+                          className="w-[50px] bg-tn-bg-dark border border-tn-border/50 rounded px-1
+                                     text-tn-cyan text-right focus:outline-none focus:border-tn-cyan
+                                     focus:ring-1 focus:ring-tn-cyan/30 transition-colors"
+                          style={{ fontSize: 9, height: 20 }}
+                        />
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-[9px] text-tn-muted mt-1.5 px-2 font-mono leading-relaxed">
+            Symmetric — editing one cell updates its mirror.<br/>
+            Used to auto-fill laden miles on custom routes.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 text-xs text-tn-muted border-t border-tn-border pt-3 font-mono leading-relaxed">
         India routes use fixed geometry; all routes share vessel performance.

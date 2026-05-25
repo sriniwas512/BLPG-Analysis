@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { DISTANCE_PORTS, PORT_SHORT } from '../utils/calculations.js';
+
 const fmt0 = (v) =>
   v == null ? '–' : v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const fmt2 = (v) =>
@@ -5,14 +8,20 @@ const fmt2 = (v) =>
 const fmtD = (v) => (v == null ? '–' : v.toFixed(2));
 
 const COLOR_MAP = {
-  purple: { text: 'text-tn-purple', border: 'border-tn-purple/40', bg: 'bg-tn-purple/10', ring: 'shadow-tn-purple/5' },
-  orange: { text: 'text-tn-orange', border: 'border-tn-orange/40', bg: 'bg-tn-orange/10', ring: 'shadow-tn-orange/5' },
-  cyan:   { text: 'text-tn-cyan',   border: 'border-tn-cyan/40',   bg: 'bg-tn-cyan/10',   ring: 'shadow-tn-cyan/5' },
+  purple: { text: 'text-tn-purple', border: 'border-tn-purple/40', bg: 'bg-tn-purple/10', ring: 'shadow-tn-purple/5', btnBg: 'bg-tn-purple/20 hover:bg-tn-purple/30 border-tn-purple/40' },
+  orange: { text: 'text-tn-orange', border: 'border-tn-orange/40', bg: 'bg-tn-orange/10', ring: 'shadow-tn-orange/5', btnBg: 'bg-tn-orange/20 hover:bg-tn-orange/30 border-tn-orange/40' },
+  cyan:   { text: 'text-tn-cyan',   border: 'border-tn-cyan/40',   bg: 'bg-tn-cyan/10',   ring: 'shadow-tn-cyan/5',   btnBg: 'bg-tn-cyan/20 hover:bg-tn-cyan/30 border-tn-cyan/40'   },
 };
 
-export default function RouteGroup({ title, description, color = 'purple', routes, benchmarkRate }) {
+export default function RouteGroup({
+  title, description, color = 'purple', routes, benchmarkRate,
+  distanceMatrix, onAdd, onEdit, onDelete, onReset,
+}) {
+  const [expandedId, setExpandedId] = useState(null);
   if (!routes || routes.length === 0) return null;
   const c = COLOR_MAP[color];
+
+  const COL_COUNT = 9; // route + earnings + $/pmt + days + sea + bunker + port + comm + edit
 
   return (
     <section className={`bg-tn-bg-alt rounded-xl border ${c.border} shadow-lg ${c.ring} overflow-hidden`}>
@@ -52,44 +61,275 @@ export default function RouteGroup({ title, description, color = 'purple', route
               <Th sub="$">Bunker</Th>
               <Th sub="$">Port Chgs</Th>
               <Th sub="$">Commission</Th>
+              <th className="px-2 border-b border-tn-border w-8" />
             </tr>
           </thead>
           <tbody>
             {routes.map((row) => (
-              <tr key={row.id} className="border-b border-tn-border/40 hover:bg-tn-bg-hi transition-colors">
-                <td className="px-3 py-2 sticky left-0 z-10 bg-tn-bg-alt">
-                  <RouteLabel id={row.id} origin={row.origin} dest={row.dest} color={c} />
-                </td>
+              <>
+                <tr key={row.id} className="border-b border-tn-border/40 hover:bg-tn-bg-hi transition-colors">
+                  <td className="px-3 py-2 sticky left-0 z-10 bg-tn-bg-alt">
+                    <RouteLabel id={row.id} origin={row.origin} dest={row.dest} color={c} />
+                  </td>
 
-                {/* PRIMARY: total gross earnings for the voyage (what owner bids in tender) */}
-                <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <span className={`${c.bg} ${c.text} px-2.5 py-1 rounded border ${c.border}
-                                    font-mono font-bold text-sm`}>
-                    ${fmt0(row.totalFreight)}
-                  </span>
-                </td>
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                    <span className={`${c.bg} ${c.text} px-2.5 py-1 rounded border ${c.border}
+                                      font-mono font-bold text-sm`}>
+                      ${fmt0(row.totalFreight)}
+                    </span>
+                  </td>
 
-                {/* Implied freight per MT */}
-                <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <span className="font-mono text-tn-fg text-xs">
-                    ${fmt2(row.frtRatePerMT)}
-                    <span className="text-[10px] text-tn-muted ml-1">/pmt</span>
-                  </span>
-                </td>
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                    <span className="font-mono text-tn-fg text-xs">
+                      ${fmt2(row.frtRatePerMT)}
+                      <span className="text-[10px] text-tn-muted ml-1">/pmt</span>
+                    </span>
+                  </td>
 
-                <Td>{fmtD(row.totalDays)}</Td>
-                <Td>{fmtD(row.voyageDays)}</Td>
-                <Td>${fmt0(row.bunkerCost)}</Td>
-                <Td>${fmt0(row.portChg)}</Td>
-                <Td>{row.commission != null ? `$${fmt0(row.commission)}` : '–'}</Td>
-              </tr>
+                  <Td>{fmtD(row.totalDays)}</Td>
+                  <Td>{fmtD(row.voyageDays)}</Td>
+                  <Td>${fmt0(row.bunkerCost)}</Td>
+                  <Td>${fmt0(row.portChg)}</Td>
+                  <Td>{row.commission != null ? `$${fmt0(row.commission)}` : '–'}</Td>
+
+                  <td className="px-2 py-2 text-center">
+                    <button
+                      onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
+                      title={expandedId === row.id ? 'Close editor' : 'Edit route'}
+                      className={`text-[11px] px-1.5 py-0.5 rounded border transition-colors font-mono
+                                  ${expandedId === row.id
+                                    ? `${c.btnBg} ${c.text} border-current`
+                                    : 'text-tn-muted border-tn-border hover:text-tn-fg hover:border-tn-fg'}`}
+                    >
+                      {expandedId === row.id ? '✕' : '✎'}
+                    </button>
+                  </td>
+                </tr>
+
+                {expandedId === row.id && (
+                  <tr key={row.id + '_edit'} className="bg-tn-bg border-b border-tn-border">
+                    <td colSpan={COL_COUNT} className="p-4">
+                      <EditForm
+                        row={row}
+                        c={c}
+                        distanceMatrix={distanceMatrix}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onReset={onReset}
+                        onDone={() => setExpandedId(null)}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
+
+            {/* Add route row */}
+            <tr className="border-t border-tn-border/40">
+              <td colSpan={COL_COUNT} className="px-3 py-2">
+                <button
+                  onClick={onAdd}
+                  className={`text-xs font-mono px-3 py-1.5 rounded border ${c.btnBg} ${c.text}
+                              flex items-center gap-1.5 transition-colors`}
+                >
+                  <span className="text-base leading-none">+</span> Add Route
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
     </section>
   );
 }
+
+// ── Inline edit form ──────────────────────────────────────────────────────────
+
+function EditForm({ row, c, distanceMatrix, onEdit, onDelete, onReset, onDone }) {
+  const ef = (field, value) => onEdit(row.id, field, value);
+
+  function applyFromMatrix() {
+    const seq = row.disPortSequence || [];
+    if (!seq.length) return;
+    const chain = [row.origin, ...seq];
+    let laden = 0;
+    for (let i = 0; i < chain.length - 1; i++) {
+      laden += distanceMatrix?.[chain[i]]?.[chain[i + 1]] || 0;
+    }
+    const ballast = distanceMatrix?.[seq[seq.length - 1]]?.[row.origin] || 0;
+    ef('miles_l', Math.round(laden * 100) / 100);
+    ef('miles_b', Math.round(ballast * 100) / 100);
+  }
+
+  return (
+    <div>
+      <div className={`text-[10px] font-mono uppercase tracking-widest ${c.text} mb-3`}>
+        {row.isBuiltin ? `Editing built-in route (col ${row.id})` : 'Custom route'}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-2">
+        <EF label="Route Name" value={row.dest} type="text"
+            onChange={(v) => ef('dest', v)} />
+        <EF label="Ballast Miles" value={row.miles_b} unit="nm"
+            onChange={(v) => ef('miles_b', parseFloat(v) || 0)} />
+        <EF label="Laden Miles" value={row.miles_l} unit="nm"
+            onChange={(v) => ef('miles_l', parseFloat(v) || 0)} />
+        <EF label="Cargo MT" value={row.intank} unit="MT"
+            onChange={(v) => ef('intank', parseFloat(v) || 0)} />
+        <EF label="Days Disch" value={row.daysDisch} unit="d" step="0.5"
+            onChange={(v) => ef('daysDisch', parseFloat(v) || 0)} />
+        <EF label="NOR +6h" value={row.norPlus6} unit="d" step="0.25"
+            onChange={(v) => ef('norPlus6', parseFloat(v) || 0)} />
+        <EF label="Load Port $" value={row.loadPChgVal}
+            onChange={(v) => ef('loadPChg', parseFloat(v) || 0)} />
+        <EF
+          label={row.isBuiltin && row.disPChgOverride == null ? 'Dis Port $ (sidebar →)' : 'Dis Port $'}
+          value={row.disPChgOverride ?? row.disPChg}
+          note={row.isBuiltin && row.disPChgOverride == null ? 'Set per-port above; override here' : null}
+          onChange={(v) => ef('disPChgOverride', parseFloat(v) || 0)}
+        />
+        <EF label="AWRIP $" value={row.awrip}
+            onChange={(v) => ef('awrip', parseFloat(v) || 0)} />
+        <SEF label="Sea Days Factor" value={String(row.seaDaysFactor)}
+             options={[{ v: '1.05', l: '× 1.05 (standard)' }, { v: '1', l: '× 1.00 (no factor)' }]}
+             onChange={(v) => ef('seaDaysFactor', parseFloat(v))} />
+        <SEF label="MDO Rate" value={row.mdo_rate}
+             options={[{ v: 'portMDO', l: 'Port MDO' }, { v: 'idleMDO', l: 'Idle MDO' }]}
+             onChange={(v) => ef('mdo_rate', v)} />
+      </div>
+
+      {/* Port sequence → auto-fill laden from matrix */}
+      <div className="mt-3 border-t border-tn-border/60 pt-3">
+        <div className="text-[10px] text-tn-muted font-mono mb-1.5 uppercase tracking-wider">
+          Port sequence — auto-fill laden &amp; ballast from matrix
+        </div>
+        <div className="flex items-center gap-1 flex-wrap">
+          <span className={`text-xs font-mono px-1.5 py-0.5 rounded bg-tn-bg-dark border border-tn-border ${c.text}`}>
+            {row.origin}
+          </span>
+          {(row.disPortSequence || []).map((port, i) => (
+            <span key={i} className="flex items-center gap-1">
+              <span className="text-tn-muted text-xs">→</span>
+              <select
+                value={port}
+                onChange={(e) => {
+                  const seq = [...(row.disPortSequence || [])];
+                  seq[i] = e.target.value;
+                  ef('disPortSequence', seq);
+                }}
+                className="bg-tn-bg-dark border border-tn-border text-tn-fg text-xs rounded px-1 py-0.5
+                           focus:outline-none focus:border-tn-cyan"
+              >
+                {DISTANCE_PORTS.filter((p) => p !== row.origin).map((p) => (
+                  <option key={p} value={p}>{PORT_SHORT[p]}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => ef('disPortSequence', (row.disPortSequence || []).filter((_, j) => j !== i))}
+                className="text-tn-muted hover:text-tn-red text-xs leading-none"
+              >×</button>
+            </span>
+          ))}
+          <button
+            onClick={() => {
+              const available = DISTANCE_PORTS.filter((p) => p !== row.origin);
+              ef('disPortSequence', [...(row.disPortSequence || []), available[0]]);
+            }}
+            className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-tn-border/60
+                       text-tn-muted hover:text-tn-fg hover:border-tn-fg transition-colors"
+          >
+            + port
+          </button>
+          {(row.disPortSequence || []).length > 0 && (
+            <button
+              onClick={applyFromMatrix}
+              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${c.btnBg} ${c.text} ml-1 transition-colors`}
+            >
+              ↑ Apply to miles
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-2 mt-3 flex-wrap">
+        {row.isBuiltin && (
+          <button
+            onClick={() => { onReset(row.id); }}
+            className="text-[11px] font-mono px-2.5 py-1 rounded border border-tn-border
+                       text-tn-muted hover:text-tn-yellow hover:border-tn-yellow transition-colors"
+          >
+            ↺ Reset to defaults
+          </button>
+        )}
+        {row.isBuiltin && row.disPChgOverride != null && (
+          <button
+            onClick={() => ef('disPChgOverride', null)}
+            className="text-[11px] font-mono px-2.5 py-1 rounded border border-tn-border
+                       text-tn-muted hover:text-tn-cyan hover:border-tn-cyan transition-colors"
+          >
+            ↺ Use sidebar dis port $
+          </button>
+        )}
+        {!row.isBuiltin && (
+          <button
+            onClick={() => { onDelete(row.id); onDone(); }}
+            className="text-[11px] font-mono px-2.5 py-1 rounded border border-tn-red/40
+                       text-tn-red hover:bg-tn-red/10 transition-colors"
+          >
+            🗑 Delete route
+          </button>
+        )}
+        <button
+          onClick={onDone}
+          className={`text-[11px] font-mono px-2.5 py-1 rounded border ${c.btnBg} ${c.text} ml-auto transition-colors`}
+        >
+          ✓ Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Small field helpers ───────────────────────────────────────────────────────
+
+function EF({ label, value, type = 'number', unit, step = 'any', note, onChange }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <label className="text-[10px] text-tn-muted font-mono uppercase tracking-wide">{label}</label>
+      <div className="flex items-center gap-1">
+        <input
+          type={type}
+          step={type === 'number' ? step : undefined}
+          min={type === 'number' ? 0 : undefined}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="input-blue flex-1 min-w-0 text-right"
+        />
+        {unit && <span className="text-[10px] text-tn-muted font-mono whitespace-nowrap">{unit}</span>}
+      </div>
+      {note && <div className="text-[9px] text-tn-muted font-mono leading-tight">{note}</div>}
+    </div>
+  );
+}
+
+function SEF({ label, value, options, onChange }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <label className="text-[10px] text-tn-muted font-mono uppercase tracking-wide">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-tn-bg-dark border border-tn-blue/40 rounded px-2 py-1 text-sm text-tn-cyan font-mono
+                   focus:outline-none focus:border-tn-cyan focus:ring-1 focus:ring-tn-cyan"
+      >
+        {options.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+      </select>
+    </div>
+  );
+}
+
+// ── Table primitives ──────────────────────────────────────────────────────────
 
 function Th({ children, sub, highlight }) {
   return (
