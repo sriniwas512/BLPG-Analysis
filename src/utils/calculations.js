@@ -56,6 +56,17 @@ export const PORT_SHORT = {
   Dahej: 'DAH', Krishnapatnam: 'KRS', Vizag: 'VIZ', MAA: 'MAA',
 };
 
+// Maps a DISTANCE_PORTS name → the corresponding inp key for port charges
+export const PORT_CHARGE_KEY = {
+  NMG: 'portNMG', Haldia: 'portHald', Mumbai: 'portMumbai',
+  Dahej: 'portDahej', Krishnapatnam: 'portKrishnapatnam', Vizag: 'portViz',
+};
+
+// Reverse: inp key → port name (for deriving sequence from namedDisPorts)
+export const CHARGE_KEY_TO_PORT = Object.fromEntries(
+  Object.entries(PORT_CHARGE_KEY).map(([p, k]) => [k, p])
+);
+
 export const DEFAULT_DISTANCE_MATRIX = {
   Ruwais:        { Ruwais: 0,       NMG: 1581.81, Haldia: 3205.43, Mumbai: 1284.19, Dahej: 1264.61, Krishnapatnam: 2734.85, Vizag: 2887.65, MAA: 403.55  },
   NMG:           { Ruwais: 1581.81, NMG: 0,       Haldia: 1654,    Mumbai: 418.89,  Dahej: 572.18,  Krishnapatnam: 1217.95, Vizag: 1406.55, MAA: 1803.06 },

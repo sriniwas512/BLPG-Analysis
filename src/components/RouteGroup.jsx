@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DISTANCE_PORTS, PORT_SHORT } from '../utils/calculations.js';
+import { DISTANCE_PORTS, PORT_SHORT, PORT_CHARGE_KEY, CHARGE_KEY_TO_PORT } from '../utils/calculations.js';
 
 const fmt0 = (v) =>
   v == null ? '–' : v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -15,7 +15,7 @@ const COLOR_MAP = {
 
 export default function RouteGroup({
   title, description, color = 'purple', routes, benchmarkRate,
-  distanceMatrix, onAdd, onEdit, onDelete, onReset,
+  inputs, distanceMatrix, onAdd, onEdit, onDelete, onReset,
 }) {
   const [expandedId, setExpandedId] = useState(null);
   if (!routes || routes.length === 0) return null;
@@ -112,6 +112,7 @@ export default function RouteGroup({
                       <EditForm
                         row={row}
                         c={c}
+                        inputs={inputs}
                         distanceMatrix={distanceMatrix}
                         onEdit={onEdit}
                         onDelete={onDelete}
@@ -145,28 +146,162 @@ export default function RouteGroup({
 
 // ── Inline edit form ──────────────────────────────────────────────────────────
 
-function EditForm({ row, c, distanceMatrix, onEdit, onDelete, onReset, onDone }) {
+function EditForm({ row, c, inputs, distanceMatrix, onEdit, onDelete, onReset, onDone }) {
   const ef = (field, value) => onEdit(row.id, field, value);
 
+  // Derive display sequence: use stored disPortSequence, or back-compute from namedDisPorts for builtins
+  const displaySeq = (row.disPortSequence && row.disPortSequence.length > 0)
+    ? row.disPortSequence
+    : (row.namedDisPorts || []).map((k) => CHARGE_KEY_TO_PORT[k]).filter(Boolean);
+
+  // Discharge ports available for selection (all matrix ports except origin)
+  const availablePorts = DISTANCE_PORTS.filter((p) => p !== row.origin && PORT_CHARGE_KEY[p]);
+
+  function updateSequence(newSeq) {
+    const named = newSeq.map((p) => PORT_CHARGE_KEY[p]).filter(Boolean);
+    ef('disPortSequence', newSeq);
+    ef('namedDisPorts', named);
+    ef('disPChgOverride', null); // let named ports drive the charge
+    // auto-update dest label
+    if (newSeq.length > 0) {
+      ef('dest', `${row.origin} → ${newSeq.join(' + ')}`);
+    }
+  }
+
+  function addPort() {
+    const next = availablePorts.find((p) => !displaySeq.includes(p)) || availablePorts[0];
+    updateSequence([...displaySeq, next]);
+  }
+
+  function removePort(i) {
+    updateSequence(displaySeq.filter((_, j) => j !== i));
+  }
+
+  function changePort(i, val) {
+    const seq = [...displaySeq];
+    seq[i] = val;
+    updateSequence(seq);
+  }
+
   function applyFromMatrix() {
-    const seq = row.disPortSequence || [];
-    if (!seq.length) return;
-    const chain = [row.origin, ...seq];
+    if (!displaySeq.length) return;
+    const chain = [row.origin, ...displaySeq];
     let laden = 0;
     for (let i = 0; i < chain.length - 1; i++) {
       laden += distanceMatrix?.[chain[i]]?.[chain[i + 1]] || 0;
     }
-    const ballast = distanceMatrix?.[seq[seq.length - 1]]?.[row.origin] || 0;
+    const ballast = distanceMatrix?.[displaySeq[displaySeq.length - 1]]?.[row.origin] || 0;
     ef('miles_l', Math.round(laden * 100) / 100);
     ef('miles_b', Math.round(ballast * 100) / 100);
   }
 
+  // Per-port charge breakdown (only for named ports)
+  const namedPorts = (row.namedDisPorts || []);
+  const hasOverride = row.disPChgOverride != null;
+
   return (
     <div>
       <div className={`text-[10px] font-mono uppercase tracking-widest ${c.text} mb-3`}>
-        {row.isBuiltin ? `Editing built-in route (col ${row.id})` : 'Custom route'}
+        {row.isBuiltin ? `Built-in route (col ${row.id}) — all fields editable` : 'Custom route'}
       </div>
 
+      {/* ── Discharge port selector ─────────────────────────── */}
+      <div className="mb-4 p-3 rounded-lg bg-tn-bg-dark border border-tn-border/60">
+        <div className="text-[10px] text-tn-muted font-mono uppercase tracking-wider mb-2">
+          Discharge ports
+        </div>
+        <div className="flex items-start gap-2 flex-wrap">
+          <span className={`text-xs font-mono px-1.5 py-1 rounded bg-tn-bg border border-tn-border ${c.text} self-center`}>
+            {row.origin}
+          </span>
+
+          {displaySeq.map((port, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <span className="text-tn-muted text-sm self-center">→</span>
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1">
+                  <select
+                    value={port}
+                    onChange={(e) => changePort(i, e.target.value)}
+                    className="bg-tn-bg border border-tn-blue/40 text-tn-fg text-xs rounded px-1.5 py-1
+                               focus:outline-none focus:border-tn-cyan focus:ring-1 focus:ring-tn-cyan/30"
+                  >
+                    {availablePorts.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  {displaySeq.length > 1 && (
+                    <button
+                      onClick={() => removePort(i)}
+                      className="text-tn-muted hover:text-tn-red text-xs leading-none w-4"
+                      title="Remove port"
+                    >×</button>
+                  )}
+                </div>
+                {PORT_CHARGE_KEY[port] && !hasOverride && (
+                  <div className="text-[9px] font-mono text-tn-muted leading-none px-0.5">
+                    ${fmt0(inputs?.[PORT_CHARGE_KEY[port]] ?? 0)} (sidebar)
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <button
+            onClick={addPort}
+            className={`self-center text-[11px] font-mono px-2 py-1 rounded border ${c.btnBg} ${c.text}
+                        flex items-center gap-1 transition-colors`}
+            title="Add another discharge port"
+          >
+            <span className="text-sm leading-none">+</span> port
+          </button>
+        </div>
+
+        {/* Dis port charge summary */}
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          {!hasOverride && namedPorts.length > 0 ? (
+            <div className="text-[10px] font-mono text-tn-muted">
+              Dis port total: {namedPorts.map((k) => (
+                <span key={k} className="text-tn-fg-dim">${fmt0(inputs?.[k] ?? 0)}</span>
+              )).reduce((acc, el, i) => i === 0 ? [el] : [...acc, <span key={`s${i}`} className="mx-0.5">+</span>, el], [])}
+              <span className="text-tn-cyan ml-1 font-bold">= ${fmt0(row.disPChg)}</span>
+              <span className="text-tn-muted ml-1">(changes with sidebar)</span>
+            </div>
+          ) : hasOverride ? (
+            <div className="text-[10px] font-mono text-tn-muted">
+              Dis port total: <span className="text-tn-yellow font-bold">${fmt0(row.disPChgOverride)}</span>
+              <span className="text-tn-muted ml-1">(overridden)</span>
+              <button onClick={() => ef('disPChgOverride', null)}
+                className="ml-2 text-tn-cyan hover:text-tn-fg underline">clear override</button>
+            </div>
+          ) : null}
+
+          <button
+            onClick={applyFromMatrix}
+            className={`text-[10px] font-mono px-2 py-0.5 rounded border ${c.btnBg} ${c.text} transition-colors ml-auto`}
+            title="Compute laden miles as sum of matrix legs; ballast as return leg"
+          >
+            ↑ Auto-fill miles from matrix
+          </button>
+        </div>
+
+        {/* Optional override */}
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-[10px] text-tn-muted font-mono">Override dis port total $:</span>
+          <input
+            type="number" step="1000" min={0}
+            placeholder="leave blank to use sidebar"
+            value={hasOverride ? row.disPChgOverride : ''}
+            onChange={(e) => {
+              const v = e.target.value;
+              ef('disPChgOverride', v === '' ? null : parseFloat(v) || 0);
+            }}
+            className="input-blue w-28 text-xs"
+          />
+        </div>
+      </div>
+
+      {/* ── Other fields ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-2">
         <EF label="Route Name" value={row.dest} type="text"
             onChange={(v) => ef('dest', v)} />
@@ -182,12 +317,6 @@ function EditForm({ row, c, distanceMatrix, onEdit, onDelete, onReset, onDone })
             onChange={(v) => ef('norPlus6', parseFloat(v) || 0)} />
         <EF label="Load Port $" value={row.loadPChgVal}
             onChange={(v) => ef('loadPChg', parseFloat(v) || 0)} />
-        <EF
-          label={row.isBuiltin && row.disPChgOverride == null ? 'Dis Port $ (sidebar →)' : 'Dis Port $'}
-          value={row.disPChgOverride ?? row.disPChg}
-          note={row.isBuiltin && row.disPChgOverride == null ? 'Set per-port above; override here' : null}
-          onChange={(v) => ef('disPChgOverride', parseFloat(v) || 0)}
-        />
         <EF label="AWRIP $" value={row.awrip}
             onChange={(v) => ef('awrip', parseFloat(v) || 0)} />
         <SEF label="Sea Days Factor" value={String(row.seaDaysFactor)}
@@ -198,77 +327,15 @@ function EditForm({ row, c, distanceMatrix, onEdit, onDelete, onReset, onDone })
              onChange={(v) => ef('mdo_rate', v)} />
       </div>
 
-      {/* Port sequence → auto-fill laden from matrix */}
-      <div className="mt-3 border-t border-tn-border/60 pt-3">
-        <div className="text-[10px] text-tn-muted font-mono mb-1.5 uppercase tracking-wider">
-          Port sequence — auto-fill laden &amp; ballast from matrix
-        </div>
-        <div className="flex items-center gap-1 flex-wrap">
-          <span className={`text-xs font-mono px-1.5 py-0.5 rounded bg-tn-bg-dark border border-tn-border ${c.text}`}>
-            {row.origin}
-          </span>
-          {(row.disPortSequence || []).map((port, i) => (
-            <span key={i} className="flex items-center gap-1">
-              <span className="text-tn-muted text-xs">→</span>
-              <select
-                value={port}
-                onChange={(e) => {
-                  const seq = [...(row.disPortSequence || [])];
-                  seq[i] = e.target.value;
-                  ef('disPortSequence', seq);
-                }}
-                className="bg-tn-bg-dark border border-tn-border text-tn-fg text-xs rounded px-1 py-0.5
-                           focus:outline-none focus:border-tn-cyan"
-              >
-                {DISTANCE_PORTS.filter((p) => p !== row.origin).map((p) => (
-                  <option key={p} value={p}>{PORT_SHORT[p]}</option>
-                ))}
-              </select>
-              <button
-                onClick={() => ef('disPortSequence', (row.disPortSequence || []).filter((_, j) => j !== i))}
-                className="text-tn-muted hover:text-tn-red text-xs leading-none"
-              >×</button>
-            </span>
-          ))}
-          <button
-            onClick={() => {
-              const available = DISTANCE_PORTS.filter((p) => p !== row.origin);
-              ef('disPortSequence', [...(row.disPortSequence || []), available[0]]);
-            }}
-            className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-tn-border/60
-                       text-tn-muted hover:text-tn-fg hover:border-tn-fg transition-colors"
-          >
-            + port
-          </button>
-          {(row.disPortSequence || []).length > 0 && (
-            <button
-              onClick={applyFromMatrix}
-              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${c.btnBg} ${c.text} ml-1 transition-colors`}
-            >
-              ↑ Apply to miles
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      <div className="flex gap-2 mt-3 flex-wrap">
+      {/* ── Action buttons ───────────────────────────────────── */}
+      <div className="flex gap-2 mt-4 flex-wrap">
         {row.isBuiltin && (
           <button
-            onClick={() => { onReset(row.id); }}
+            onClick={() => onReset(row.id)}
             className="text-[11px] font-mono px-2.5 py-1 rounded border border-tn-border
                        text-tn-muted hover:text-tn-yellow hover:border-tn-yellow transition-colors"
           >
             ↺ Reset to defaults
-          </button>
-        )}
-        {row.isBuiltin && row.disPChgOverride != null && (
-          <button
-            onClick={() => ef('disPChgOverride', null)}
-            className="text-[11px] font-mono px-2.5 py-1 rounded border border-tn-border
-                       text-tn-muted hover:text-tn-cyan hover:border-tn-cyan transition-colors"
-          >
-            ↺ Use sidebar dis port $
           </button>
         )}
         {!row.isBuiltin && (

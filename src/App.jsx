@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   calculateAll, DEFAULT_INPUTS, DEFAULT_ROUTE_CONFIGS,
-  DEFAULT_DISTANCE_MATRIX,
+  DEFAULT_DISTANCE_MATRIX, PORT_CHARGE_KEY,
 } from './utils/calculations.js';
 import { exportToExcel } from './utils/excelExport.js';
 import InputPanel from './components/InputPanel.jsx';
@@ -45,15 +45,17 @@ export default function App() {
 
   function handleAddRoute(origin) {
     const id = 'custom_' + Date.now();
+    const defaultPort = origin === 'MAA' ? 'Vizag' : 'NMG';
     setRouteConfigs((prev) => [...prev, {
       id, origin,
-      dest: 'New Route',
+      dest: `${origin} → ${defaultPort}`,
       miles_b: 0, miles_l: 0,
       loadPChg: origin === 'MAA' ? 12000 : 32000,
-      namedDisPorts: [], fixedDisPChgExtra: 0, disPChgOverride: 100000,
+      namedDisPorts: [PORT_CHARGE_KEY[defaultPort]].filter(Boolean),
+      fixedDisPChgExtra: 0, disPChgOverride: null,
       awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
       intank: 45000, seaDaysFactor: 1.05, mdo_rate: 'idleMDO',
-      isBuiltin: false, disPortSequence: [],
+      isBuiltin: false, disPortSequence: [defaultPort],
     }]);
     return id;
   }
@@ -193,6 +195,7 @@ export default function App() {
             color="purple"
             routes={r.maaRoutes}
             benchmarkRate={benchmark.ratePerDay}
+            inputs={inputs}
             distanceMatrix={distanceMatrix}
             onAdd={() => handleAddRoute('MAA')}
             onEdit={handleUpdateRoute}
