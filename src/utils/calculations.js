@@ -200,6 +200,8 @@ function calcIndiaRoute(cfg, inp, bResults) {
   const totalCost    = cfg.awrip + commission + bunkerCost + portChg;
   const frtRatePerMT = totalFreight / cfg.intank;
 
+  const impliedTce = (totalFreight * 0.96025 - cfg.awrip - bunkerCost - portChg) / totalDays;
+
   return {
     frtRatePerMT,
     totalFreight,
@@ -209,6 +211,7 @@ function calcIndiaRoute(cfg, inp, bResults) {
     totalCost,
     ratePerDay: tce,
     tce,
+    impliedTce,
     tcePlusBunk: tce + inp.portIFO * inp.ifoPrice,
   };
 }

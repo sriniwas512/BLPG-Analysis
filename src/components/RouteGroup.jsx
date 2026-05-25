@@ -87,7 +87,7 @@ export default function RouteGroup({
                   </td>
 
                   <Td>{fmtD(row.totalDays)}</Td>
-                  <Td>${fmt0(row.ratePerDay)}</Td>
+                  <Td>${fmt0(row.impliedTce)}</Td>
                   <Td>${fmt0(row.bunkerCost)}</Td>
                   <Td>${fmt0(row.portChg)}</Td>
                   <Td>{row.commission != null ? `$${fmt0(row.commission)}` : '–'}</Td>
