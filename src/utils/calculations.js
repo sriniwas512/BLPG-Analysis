@@ -6,6 +6,17 @@
 export const DEFAULT_INPUTS = {
   // Market / vessel (blue, column B)
   frtRate: 207,
+  // Per-route freight rates ($/pmt) — editable per route in the UI
+  frtRate_D: 207,
+  frtRate_G: 207,
+  frtRate_I: 207,
+  frtRate_K: 207,
+  frtRate_M: 207,
+  frtRate_O: 207,
+  frtRate_Q: 207,
+  frtRate_S: 207,
+  frtRate_U: 207,
+  frtRate_W: 207,
   intankMT: 46200,
   ifoPrice: 925,
   mdoPrice: 1495,
@@ -100,18 +111,29 @@ function calcD(inp, bResults) {
 
   const bunkerCost = ifoMT * inp.ifoPrice + mdoMT * inp.mdoPrice; // D20
   const portChg    = inp.loadPChgD + inp.disPChgD;                // D21 (D15=0)
-  const timeCost   = Math.round(bResults.ratePerDay * totalDays * 100) / 100; // D19 = ROUND(D6*D43,2)
-  const totalCost  = timeCost + bunkerCost + portChg;             // D22
-  const frtRatePerMT = Math.round((totalCost / inp.intankMT) * 100) / 100; // D3
+
+  // Forward calculation: given freight rate → gross hire $/day
+  const routeFrtRate = inp.frtRate_D != null ? inp.frtRate_D : inp.frtRate;
+  const totalRevenue = routeFrtRate * inp.intankMT;
+  const commission   = totalRevenue * 0.03975;
+  const timeCost     = totalRevenue * 0.96025 - bunkerCost - portChg;
+  const ratePerDay   = timeCost / totalDays;
+
+  // Break-even $/pmt (back-calc from benchmark) — reference only
+  const breakEvenTimeCost  = Math.round(bResults.ratePerDay * totalDays * 100) / 100;
+  const breakEvenTotalCost = breakEvenTimeCost + bunkerCost + portChg;
+  const breakEvenFrtPerMT  = Math.round((breakEvenTotalCost / inp.intankMT) * 100) / 100;
 
   return {
-    frtRatePerMT,
-    totalFreight: totalCost,
+    frtRatePerMT: routeFrtRate,
+    breakEvenFrtPerMT,
+    totalFreight: totalRevenue,
     blstDays, ladnDays, voyageDays, portDaysFactors, totalDays,
-    ifoMT, mdoMT, bunkerCost, portChg, timeCost, totalCost,
-    ratePerDay: bResults.ratePerDay,
-    tce: bResults.ratePerDay,
-    tcePlusBunk: bResults.ratePerDay + inp.portIFO * inp.ifoPrice,
+    ifoMT, mdoMT, bunkerCost, portChg, commission, timeCost,
+    totalCost: totalRevenue,
+    ratePerDay,
+    tce: ratePerDay,
+    tcePlusBunk: ratePerDay + inp.portIFO * inp.ifoPrice,
   };
 }
 
@@ -229,29 +251,32 @@ function calcIndiaRoute(cfg, inp, bResults) {
   const bunkerCost = ifoMT * inp.ifoPrice + mdoMT * inp.mdoPrice; // G20
   const disPChg = cfg.getDisPChg(inp);
   const portChg = cfg.loadPChg + disPChg;                         // G21 = G14+G13
-  // G19 = 0 (time cost not separately tracked for India routes)
 
-  // G22 = G15+G16+G17+G18+G19+G20+G21
-  //      = 0 + awrip + 0 + (G3*3.975%) + 0 + bunkerCost + portChg
-  // G3 = (TCE*totalDays + awrip + bunkerCost + portChg) / 0.96025
-  const nonCommissionCosts = cfg.awrip + bunkerCost + portChg;
+  // Forward calculation: given freight rate → gross hire $/day
+  const routeFrtRate = inp['frtRate_' + cfg.id] != null ? inp['frtRate_' + cfg.id] : inp.frtRate;
+  const totalRevenue = routeFrtRate * cfg.intank;
+  const commission   = totalRevenue * 0.03975;
+  const timeCost     = totalRevenue * 0.96025 - bunkerCost - portChg - cfg.awrip;
+  const ratePerDay   = timeCost / totalDays;
+
+  // Break-even $/pmt (back-calc from benchmark, original sheet formula) — reference only
   const tce = bResults.ratePerDay; // G48 = B6
-  const totalFreight = (tce * totalDays + nonCommissionCosts) / 0.96025; // G3 (in USD)
-  const commission = totalFreight * 0.03975; // G18
+  const breakEvenFreight   = (tce * totalDays + cfg.awrip + bunkerCost + portChg) / 0.96025;
+  const breakEvenFrtPerMT  = breakEvenFreight / cfg.intank;
 
   const totalCost = cfg.awrip + commission + bunkerCost + portChg; // G22
-  const frtRatePerMT = totalFreight / cfg.intank; // $/MT
 
   return {
-    frtRatePerMT,
-    totalFreight,
+    frtRatePerMT: routeFrtRate,
+    breakEvenFrtPerMT,
+    totalFreight: totalRevenue,
     blstDays, ladnDays, voyageDays, portDaysFactors, totalDays,
     ifoMT, mdoMT, bunkerCost, portChg, commission,
-    timeCost: tce * totalDays, // conceptual time cost = TCE * days
+    timeCost,
     totalCost,
-    ratePerDay: tce,
-    tce,
-    tcePlusBunk: tce + inp.portIFO * inp.ifoPrice, // G49
+    ratePerDay,
+    tce: ratePerDay,
+    tcePlusBunk: ratePerDay + inp.portIFO * inp.ifoPrice,
   };
 }
 

@@ -78,7 +78,7 @@ export default function App() {
                 </div>
               </div>
               <div className="text-right text-xs text-tn-muted">
-                Establishes the gross charter rate<br/>target for all other routes
+                Reference voyage — benchmark hire<br/>used for route comparisons below
               </div>
             </div>
 
@@ -139,19 +139,21 @@ export default function App() {
           {/* ── MAA ORIGIN ───────────────────────────────────────── */}
           <RouteGroup
             title="MAA Origin"
-            description="Break-even freight rate ($/pmt) on each MAA-origin route to match the benchmark gross charter rate."
+            description="Gross hire ($/day) per route — enter the freight rate you expect on each route to see what hire it supports. Break-even shown for reference."
             color="purple"
             routes={r.maaRoutes}
             benchmarkRate={benchmark.ratePerDay}
+            onFreightChange={(id, val) => handleChange('frtRate_' + id, val)}
           />
 
           {/* ── RUWAIS ORIGIN ────────────────────────────────────── */}
           <RouteGroup
             title="Ruwais Origin"
-            description="Break-even freight rate ($/pmt) on each Ruwais-origin route to match the benchmark gross charter rate."
+            description="Gross hire ($/day) per route — enter the freight rate you expect on each route to see what hire it supports. Break-even shown for reference."
             color="orange"
             routes={r.ruwaisRoutes}
             benchmarkRate={benchmark.ratePerDay}
+            onFreightChange={(id, val) => handleChange('frtRate_' + id, val)}
           />
 
         </main>

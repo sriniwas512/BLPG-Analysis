@@ -10,7 +10,7 @@ const COLOR_MAP = {
   cyan:   { text: 'text-tn-cyan',   border: 'border-tn-cyan/40',   bg: 'bg-tn-cyan/10',   ring: 'shadow-tn-cyan/5' },
 };
 
-export default function RouteGroup({ title, description, color = 'purple', routes }) {
+export default function RouteGroup({ title, description, color = 'purple', routes, benchmarkRate, onFreightChange }) {
   if (!routes || routes.length === 0) return null;
   const c = COLOR_MAP[color];
 
@@ -19,7 +19,7 @@ export default function RouteGroup({ title, description, color = 'purple', route
       <header className="px-4 py-3 border-b border-tn-border flex items-center justify-between flex-wrap gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <span className={`inline-block w-2 h-2 rounded-full ${c.bg.replace('/10','')}`}></span>
+            <span className={`inline-block w-2 h-2 rounded-full ${c.bg.replace('/10', '')}`}></span>
             <h2 className={`font-bold ${c.text} text-base uppercase tracking-wide`}>{title}</h2>
             <span className="text-[10px] text-tn-muted font-mono px-2 py-0.5 rounded bg-tn-bg-dark border border-tn-border">
               {routes.length} route{routes.length > 1 ? 's' : ''}
@@ -27,6 +27,14 @@ export default function RouteGroup({ title, description, color = 'purple', route
           </div>
           <p className="text-xs text-tn-muted mt-1">{description}</p>
         </div>
+        {benchmarkRate != null && (
+          <div className="text-right">
+            <div className="text-[10px] text-tn-muted uppercase tracking-wider font-mono">Benchmark hire</div>
+            <div className="text-sm font-mono font-bold text-tn-yellow">
+              ${fmt0(benchmarkRate)}<span className="text-tn-muted text-xs font-normal">/day</span>
+            </div>
+          </div>
+        )}
       </header>
 
       <div className="overflow-x-auto">
@@ -37,14 +45,13 @@ export default function RouteGroup({ title, description, color = 'purple', route
                              border-b border-tn-border sticky left-0 bg-tn-bg-dark z-10 min-w-[200px]">
                 Route
               </th>
-              <Th highlight>Break-Even Frt</Th>
-              <Th sub="MT">Cargo</Th>
+              <Th sub="$/pmt · editable">Freight Rate</Th>
+              <Th highlight>Gross Hire</Th>
               <Th sub="days">Total Days</Th>
               <Th sub="days">Sea Days</Th>
-              <Th sub="$">Bunker Cost</Th>
+              <Th sub="$">Bunker</Th>
               <Th sub="$">Port Chgs</Th>
               <Th sub="$">Commission</Th>
-              <Th sub="$">Total Cost</Th>
             </tr>
           </thead>
           <tbody>
@@ -53,20 +60,40 @@ export default function RouteGroup({ title, description, color = 'purple', route
                 <td className="px-3 py-2 sticky left-0 z-10 bg-tn-bg-alt">
                   <RouteLabel id={row.id} origin={row.origin} dest={row.dest} color={c} />
                 </td>
+
+                {/* Editable freight rate per route */}
                 <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <span className={`${c.bg} ${c.text} px-2.5 py-1 rounded border ${c.border}
-                                    font-mono font-bold text-sm`}>
-                    ${fmt2(row.frtRatePerMT)}
-                    <span className="text-[10px] text-tn-muted ml-1 font-normal">/pmt</span>
-                  </span>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-tn-muted text-xs font-mono">$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={row.frtRatePerMT}
+                        onChange={(e) => onFreightChange && onFreightChange(row.id, parseFloat(e.target.value) || 0)}
+                        className="input-blue w-20"
+                      />
+                      <span className="text-[10px] text-tn-muted font-mono">/pmt</span>
+                    </div>
+                    {row.breakEvenFrtPerMT != null && (
+                      <div className="text-[10px] font-mono text-tn-muted leading-none">
+                        b/e {fmt2(row.breakEvenFrtPerMT)}
+                      </div>
+                    )}
+                  </div>
                 </td>
-                <Td>{fmt0(row.id === 'D' ? 46200 : 45000)}</Td>
+
+                {/* Primary output: gross hire $/day */}
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <GrossHireCell value={row.ratePerDay} benchmark={benchmarkRate} c={c} />
+                </td>
+
                 <Td>{fmtD(row.totalDays)}</Td>
                 <Td>{fmtD(row.voyageDays)}</Td>
                 <Td>${fmt0(row.bunkerCost)}</Td>
                 <Td>${fmt0(row.portChg)}</Td>
-                <Td>{row.commission ? `$${fmt0(row.commission)}` : '–'}</Td>
-                <Td>${fmt0(row.totalCost)}</Td>
+                <Td>{row.commission != null ? `$${fmt0(row.commission)}` : '–'}</Td>
               </tr>
             ))}
           </tbody>
@@ -76,11 +103,31 @@ export default function RouteGroup({ title, description, color = 'purple', route
   );
 }
 
+function GrossHireCell({ value, benchmark, c }) {
+  const diff = benchmark != null ? value - benchmark : null;
+  const isAbove = diff != null && diff >= 0;
+
+  return (
+    <div className="flex flex-col items-end gap-0.5">
+      <span className={`${c.bg} ${c.text} px-2.5 py-1 rounded border ${c.border}
+                        font-mono font-bold text-sm`}>
+        ${fmt0(value)}
+        <span className="text-[10px] text-tn-muted ml-1 font-normal">/day</span>
+      </span>
+      {diff != null && (
+        <div className={`text-[10px] font-mono leading-none ${isAbove ? 'text-tn-green' : 'text-tn-red'}`}>
+          {isAbove ? '▲' : '▼'} ${fmt0(Math.abs(diff))}/d
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Th({ children, sub, highlight }) {
   return (
     <th className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wider border-b border-tn-border
                     whitespace-nowrap text-right
-                    ${highlight ? 'text-tn-cyan' : 'text-tn-muted'}`}>
+                    ${highlight ? 'text-tn-yellow' : 'text-tn-muted'}`}>
       {children}
       {sub && <div className="font-normal normal-case tracking-normal text-[10px] text-tn-muted mt-0.5">{sub}</div>}
     </th>
