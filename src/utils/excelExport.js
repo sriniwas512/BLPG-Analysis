@@ -46,8 +46,7 @@ export function exportToExcel(inputs, results) {
   ws['O1'] = cell('Ruwais');
   ws['Q1'] = cell('Ruwais');
   ws['S1'] = cell('Ruwais');
-  ws['U1'] = cell('Ruwais');
-  ws['W1'] = cell('Ruwais');
+
 
   ws['B2'] = cell('Chiba');
   ws['G2'] = cell('NMG + Haldia');
@@ -56,8 +55,7 @@ export function exportToExcel(inputs, results) {
   ws['O2'] = cell('New Mangalore');
   ws['Q2'] = cell('NMG + Dahej');
   ws['S2'] = cell('NMG + Krishnapatnam');
-  ws['U2'] = cell('NMG + Vizag + Haldia');
-  ws['W2'] = cell('Haldia STS + Haldia');
+
 
   // ── Port charge reference (Y/Z column) ───────────────────────────────────
   ws['Y3']  = cell('Dahej');      ws['Z3']  = cell(pc.dahej, USD0);
@@ -141,45 +139,43 @@ export function exportToExcel(inputs, results) {
     O: { mb: 1612, ml: 1620, lpc: 32000, disPChgFormula: 'Z4',       awrip: 40000, np6: 0.75, dl: 2, dd: 10, seaFactor: '1.05', mdo_cell: 'O32' },
     Q: { mb: 1306, ml: 2221, lpc: 32000, disPChgFormula: 'Z3+Z4',    awrip: 40000, np6: 0.75, dl: 2, dd: 10, seaFactor: '1.05', mdo_cell: 'Q32' },
     S: { mb: 2764, ml: 2809, lpc: 32000, disPChgFormula: 'Z4+Z10',   awrip: 40000, np6: 0.75, dl: 2, dd: 10, seaFactor: '1.05', mdo_cell: 'S32' },
-    U: { mb: 3486, ml: 3633, lpc: 40000, disPChgFormula: 'Z4+Z6+Z7', awrip: 40000, np6: 1,    dl: 2, dd: 13, seaFactor: '',     mdo_cell: 'U32' },
-    W: { mb: 3486, ml: 3499, lpc: 40000, disPChgFormula: 'Z7+60000', awrip: 40000, np6: 1,    dl: 2, dd: 13, seaFactor: '',     mdo_cell: 'W32' },
   };
 
   const indiaRefSpeeds = {
-    G: 'B24', I: 'B24', M: 'B24', O: 'D24', Q: 'D24', S: 'D24', U: 'B24', W: 'D24',
+    G: 'B24', I: 'B24', M: 'B24', O: 'B24', Q: 'B24', S: 'B24',
   };
   const indiaRefSpeedsL = {
-    G: 'B25', I: 'B25', M: 'B25', O: 'D25', Q: 'D25', S: 'D25', U: 'B25', W: 'D25',
+    G: 'B25', I: 'B25', M: 'B25', O: 'B25', Q: 'B25', S: 'B25',
   };
   const indiaRefIFO9 = {
-    G: 'B9', I: 'B9', M: 'B9', O: 'B9', Q: 'B9', S: 'B9', U: 'B9', W: 'B9',
+    G: 'B9', I: 'B9', M: 'B9', O: 'B9', Q: 'B9', S: 'B9',
   };
   const indiaRefIFO10 = {
-    G: 'B10', I: 'B10', M: 'B10', O: 'B10', Q: 'B10', S: 'B10', U: 'B10', W: 'B10',
+    G: 'B10', I: 'B10', M: 'B10', O: 'B10', Q: 'B10', S: 'B10',
   };
   const indiaRefIFO26 = {
-    G: 'B26', I: 'B26', M: 'B26', O: 'B26', Q: 'B26', S: 'B26', U: 'B26', W: 'B26',
+    G: 'B26', I: 'B26', M: 'B26', O: 'B26', Q: 'B26', S: 'B26',
   };
   const indiaRefIFO27 = {
-    G: 'B27', I: 'B27', M: 'B27', O: 'B27', Q: 'B27', S: 'B27', U: 'B27', W: 'B27',
+    G: 'B27', I: 'B27', M: 'B27', O: 'B27', Q: 'B27', S: 'B27',
   };
   const indiaRefIFO28 = {
-    G: 'B28', I: 'B28', M: 'B28', O: 'B28', Q: 'B28', S: 'B28', U: 'B28', W: 'B28',
+    G: 'B28', I: 'B28', M: 'B28', O: 'B28', Q: 'B28', S: 'B28',
   };
   const indiaRefIFO29 = {
-    G: 'B29', I: 'B29', M: 'B29', O: 'B29', Q: 'B29', S: 'B29', U: 'B29', W: 'B29',
+    G: 'B29', I: 'B29', M: 'B29', O: 'B29', Q: 'B29', S: 'B29',
   };
   const indiaRefMDO30 = {
-    G: 'B30', I: 'B30', M: 'B30', O: 'B30', Q: 'B30', S: 'B30', U: 'B30', W: 'B30',
+    G: 'B30', I: 'B30', M: 'B30', O: 'B30', Q: 'B30', S: 'B30',
   };
   const indiaRefMDO31 = {
-    G: 'B31', I: 'B31', M: 'B31', O: 'B31', Q: 'B31', S: 'B31', U: 'B31', W: 'B31',
+    G: 'B31', I: 'B31', M: 'B31', O: 'B31', Q: 'B31', S: 'B31',
   };
   const indiaRefMDO32 = {
-    G: 'B32', I: 'B32', M: 'B32', O: 'B32', Q: 'B32', S: 'B32', U: 'B32', W: 'B32',
+    G: 'B32', I: 'B32', M: 'B32', O: 'B32', Q: 'B32', S: 'B32',
   };
   const indiaRefSM = {
-    G: 'B42', I: 'B42', M: 'B42', O: 'B42', Q: 'B42', S: 'B42', U: 'B42', W: 'B42',
+    G: 'B42', I: 'B42', M: 'B42', O: 'B42', Q: 'B42', S: 'B42',
   };
 
   Object.entries(indiaFixedData).forEach(([col, d]) => {

@@ -116,20 +116,6 @@ export const DEFAULT_ROUTE_CONFIGS = [
     awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
     intank: 45000, seaDaysFactor: 1.05, mdo_rate: 'idleMDO', isBuiltin: true,
   },
-  {
-    id: 'U', origin: 'Ruwais', dest: 'NMG + Vizag + Haldia',
-    miles_b: 3486, miles_l: 3633,
-    loadPChg: 40000, namedDisPorts: ['portNMG', 'portViz', 'portHald'], fixedDisPChgExtra: 0, disPChgOverride: null,
-    awrip: 40000, norPlus6: 1, daysLoading: 2, daysDisch: 13, daysBun: 0,
-    intank: 45000, seaDaysFactor: 1.0, mdo_rate: 'idleMDO', isBuiltin: true,
-  },
-  {
-    id: 'W', origin: 'Ruwais', dest: 'Haldia STS + Haldia',
-    miles_b: 3486, miles_l: 3499,
-    loadPChg: 40000, namedDisPorts: ['portHald'], fixedDisPChgExtra: 60000, disPChgOverride: null,
-    awrip: 40000, norPlus6: 1, daysLoading: 2, daysDisch: 13, daysBun: 0,
-    intank: 45000, seaDaysFactor: 1.0, mdo_rate: 'idleMDO', isBuiltin: true,
-  },
 ];
 
 function computeDisPChg(cfg, inp) {
