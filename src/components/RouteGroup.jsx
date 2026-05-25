@@ -22,8 +22,8 @@ export default function RouteGroup({
   if (!routes || routes.length === 0) return null;
   const c = COLOR_MAP[color];
 
-  // route + earnings + $/pmt + days + tce + [breakdown: bunker+port+comm] + totalCost + profit + edit
-  const COL_COUNT = showBreakdown ? 11 : 8;
+  // route + earnings + $/pmt + days + tce + [breakdown: awrip+bunker+port+comm] + totalCost + profit + edit
+  const COL_COUNT = showBreakdown ? 12 : 8;
 
   return (
     <section className={`bg-tn-bg-alt rounded-xl border ${c.border} shadow-lg ${c.ring} overflow-hidden`}>
@@ -64,6 +64,7 @@ export default function RouteGroup({
               {/* Expandable cost breakdown */}
               {showBreakdown && (
                 <>
+                  <Th sub="$">AWRIP</Th>
                   <Th sub="$">Bunker</Th>
                   <Th sub="$">Port Chgs</Th>
                   <Th sub="$">Commission</Th>
@@ -120,6 +121,7 @@ export default function RouteGroup({
 
                     {showBreakdown && (
                       <>
+                        <Td>${fmt0(row.awrip)}</Td>
                         <Td>${fmt0(row.bunkerCost)}</Td>
                         <Td>${fmt0(row.portChg)}</Td>
                         <Td>{row.commission != null ? `$${fmt0(row.commission)}` : '–'}</Td>
