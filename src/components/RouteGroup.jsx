@@ -57,7 +57,7 @@ export default function RouteGroup({
               <Th highlight sub="USD · per voyage">Gross Total Earnings</Th>
               <Th sub="$/pmt">Implied Freight</Th>
               <Th sub="days">Total Days</Th>
-              <Th sub="days">Sea Days</Th>
+              <Th sub="$/day">Implied TCE/Day</Th>
               <Th sub="$">Bunker</Th>
               <Th sub="$">Port Chgs</Th>
               <Th sub="$">Commission</Th>
@@ -87,7 +87,7 @@ export default function RouteGroup({
                   </td>
 
                   <Td>{fmtD(row.totalDays)}</Td>
-                  <Td>{fmtD(row.voyageDays)}</Td>
+                  <Td>${fmt0(row.ratePerDay)}</Td>
                   <Td>${fmt0(row.bunkerCost)}</Td>
                   <Td>${fmt0(row.portChg)}</Td>
                   <Td>{row.commission != null ? `$${fmt0(row.commission)}` : '–'}</Td>
