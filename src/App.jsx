@@ -11,7 +11,7 @@ const fmtUsd0 = (v) =>
   v == null ? '–' : v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 // Bump this whenever defaults change in a breaking way — forces cache clear on next load
-const STORAGE_VERSION = 'v4';
+const STORAGE_VERSION = 'v5';
 
 function loadLS(key, fallback) {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; }

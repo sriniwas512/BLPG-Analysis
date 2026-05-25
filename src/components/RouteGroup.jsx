@@ -384,8 +384,6 @@ function EditForm({ row, c, inputs, distanceMatrix, onEdit, onDelete, onReset, o
             onChange={(v) => ef('norPlus6', parseFloat(v) || 0)} />
         <EF label="Load Port $" value={row.loadPChgVal}
             onChange={(v) => ef('loadPChg', parseFloat(v) || 0)} />
-        <EF label="AWRIP $" value={row.awrip}
-            onChange={(v) => ef('awrip', parseFloat(v) || 0)} />
         <SEF label="Sea Days Factor" value={String(row.seaDaysFactor)}
              options={[{ v: '1.05', l: '× 1.05 (standard)' }, { v: '1', l: '× 1.00 (no factor)' }]}
              onChange={(v) => ef('seaDaysFactor', parseFloat(v))} />

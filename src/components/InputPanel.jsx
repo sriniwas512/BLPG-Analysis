@@ -66,6 +66,8 @@ export default function InputPanel({ inputs: inp, onChange, distanceMatrix, onMa
       <NumInput label="AWRIP" id="awripB" value={inp.awripB} onChange={onChange} unit="$" min={0} />
 
       <SectionTitle color="purple">India Routes — All</SectionTitle>
+      <NumInput label="AWRIP" id="awripIndia" value={inp.awripIndia} onChange={onChange} unit="$" min={0}
+        tooltip="War risk + insurance + P&I, applied to every India route" />
       <NumInput label="Commission" id="commission" value={inp.commission} onChange={onChange} unit="%" step={0.001} min={0} max={10}
         tooltip="Address + brokerage commission applied to all India route gross freight" />
       <div className="text-[10px] text-tn-muted font-mono -mt-0.5 mb-1 pl-1">
