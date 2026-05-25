@@ -79,42 +79,42 @@ export const DEFAULT_ROUTE_CONFIGS = [
     id: 'G', origin: 'Ruwais', dest: 'NMG + Haldia',
     miles_b: 3282, miles_l: 3328,
     loadPChg: 32000, namedDisPorts: ['portNMG', 'portHald'], fixedDisPChgExtra: 0, disPChgOverride: null,
-    awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
+    awrip: 0, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
     intank: 45000, seaDaysFactor: 1.05, mdo_rate: 'portMDO', isBuiltin: true,
   },
   {
     id: 'I', origin: 'Ruwais', dest: 'NMG + Mumbai',
     miles_b: 1362, miles_l: 2031,
     loadPChg: 32000, namedDisPorts: ['portMumbai', 'portNMG'], fixedDisPChgExtra: 0, disPChgOverride: null,
-    awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
+    awrip: 0, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
     intank: 45000, seaDaysFactor: 1.05, mdo_rate: 'portMDO', isBuiltin: true,
   },
   {
     id: 'M', origin: 'Ruwais', dest: 'STS Haldia + Haldia',
     miles_b: 3282, miles_l: 3283,
     loadPChg: 32000, namedDisPorts: ['portHald', 'portHaldSTS'], fixedDisPChgExtra: 0, disPChgOverride: null,
-    awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
+    awrip: 0, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
     intank: 45000, seaDaysFactor: 1.05, mdo_rate: 'idleMDO', isBuiltin: true,
   },
   {
     id: 'O', origin: 'Ruwais', dest: 'New Mangalore',
     miles_b: 1612, miles_l: 1620,
     loadPChg: 32000, namedDisPorts: ['portNMG'], fixedDisPChgExtra: 0, disPChgOverride: null,
-    awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
+    awrip: 0, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
     intank: 45000, seaDaysFactor: 1.05, mdo_rate: 'idleMDO', isBuiltin: true,
   },
   {
     id: 'Q', origin: 'Ruwais', dest: 'NMG + Dahej',
     miles_b: 1306, miles_l: 2221,
     loadPChg: 32000, namedDisPorts: ['portDahej', 'portNMG'], fixedDisPChgExtra: 0, disPChgOverride: null,
-    awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
+    awrip: 0, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
     intank: 45000, seaDaysFactor: 1.05, mdo_rate: 'idleMDO', isBuiltin: true,
   },
   {
     id: 'S', origin: 'Ruwais', dest: 'NMG + Krishnapatnam',
     miles_b: 2764, miles_l: 2809,
     loadPChg: 32000, namedDisPorts: ['portNMG', 'portKrishnapatnam'], fixedDisPChgExtra: 0, disPChgOverride: null,
-    awrip: 40000, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
+    awrip: 0, norPlus6: 0.75, daysLoading: 2, daysDisch: 10, daysBun: 0,
     intank: 45000, seaDaysFactor: 1.05, mdo_rate: 'idleMDO', isBuiltin: true,
   },
 ];
@@ -176,9 +176,8 @@ function calcIndiaRoute(cfg, inp, bResults) {
   const workingPortDays = cfg.daysLoading + cfg.daysDisch + cfg.daysBun;
   const ifoMT = voyageDays * inp.ladnIFO
     + workingPortDays * inp.portIFO + cfg.norPlus6 * inp.idleIFO;
-  const mdoSumDays = blstDays + ladnDays + voyageDays + portDaysFactors;
   const mdoRate = cfg.mdo_rate === 'portMDO' ? inp.portMDO : inp.idleMDO;
-  const mdoMT = mdoSumDays * mdoRate;
+  const mdoMT = totalDays * mdoRate;
 
   const bunkerCost = ifoMT * inp.ifoPrice + mdoMT * inp.mdoPrice;
   const disPChg    = computeDisPChg(cfg, inp);

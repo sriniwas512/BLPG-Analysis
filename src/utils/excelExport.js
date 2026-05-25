@@ -192,7 +192,7 @@ export function exportToExcel(inputs, results) {
     ws[r(13)] = cell(d.lpc, USD0);
     ws[r(14)] = formula(`=${d.disPChgFormula}`.replace('=', ''), USD0);
     ws[r(15)] = cell(0);
-    ws[r(16)] = cell(d.awrip, USD0);
+    ws[r(16)] = cell(0, USD0);
     ws[r(17)] = cell(0);
     ws[r(18)] = formula(`(${r(3)}*3.975%)`, USD0);
     ws[r(19)] = cell(0);
@@ -221,7 +221,7 @@ export function exportToExcel(inputs, results) {
     ws[r(42)] = formula(indiaRefSM[col], PCT);
     ws[r(43)] = formula(`(${r(35)}+${r(36)}+${r(37)}+${r(38)}+${r(39)}+${r(40)}+${r(41)})`, DEC2);
     ws[r(44)] = formula(`(${r(35)}*${r(27)})+((${r(37)}+${r(38)}+${r(39)}+${r(40)}+${r(41)})*${r(28)})+(${r(36)}*${r(29)})`, DEC2);
-    ws[r(45)] = formula(`SUM(${r(33)}:${r(41)})*${d.mdo_cell}`, DEC2);
+    ws[r(45)] = formula(`${r(43)}*${d.mdo_cell}`, DEC2);
     ws[r(48)] = formula('$B$6', USD2);
     if (col === 'G') {
       ws['G49'] = formula('G48+(G28*G9)', USD2);
