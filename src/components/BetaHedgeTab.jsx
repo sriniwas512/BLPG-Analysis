@@ -83,7 +83,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
     );
   }
 
-  const { routes, benchmark, shockedBenchmark, netFactor } = betaData;
+  const { routes, benchmark, shockedBenchmark } = betaData;
 
   // Enrich each route with per-route hedge fields
   // grossFrt is stored as total voyage $ — actualFrt ($/pmt) is derived
@@ -486,7 +486,7 @@ function RouteHedgeRow({
               : 'text-tn-muted'
             }`}>
               {row.expiryInfo.label} · {row.expiryInfo.tenor}
-              {row.expiryInfo.illiquid && !row.expiryInfo.diff < 0 && ' ⚠'}
+              {row.expiryInfo.illiquid && row.expiryInfo.diff >= 0 && ' ⚠'}
             </div>
           ) : (
             <div className="text-[10px] font-mono text-tn-border mt-0.5 italic">no month set</div>
@@ -697,8 +697,6 @@ function CommercialWarning() {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-
-function GlobalControls() { return null; } // inlined above in main component
 
 function SCard({ label, color, children }) {
   const borderMap = {

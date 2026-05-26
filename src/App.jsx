@@ -64,7 +64,7 @@ export default function App() {
     localStorage.removeItem('blpg-route-configs');
     localStorage.removeItem('blpg-distance-matrix');
   }
-  function handleExport() { exportToExcel(inputs, r.all); }
+  function handleExport() { exportToExcel(inputs); }
 
   function handleAddRoute(origin) {
     const id = 'custom_' + Date.now();

@@ -19,7 +19,7 @@ const USD2 = '#,##0.00';
 const DEC2 = '0.00';
 const PCT  = '0.0%';
 
-export function exportToExcel(inputs, results) {
+export function exportToExcel(inputs) {
   const inp = inputs;
   const commRate  = (inp.commission ?? 3.975) / 100;
   const netFactor = 1 - commRate;

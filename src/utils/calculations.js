@@ -236,7 +236,6 @@ export function calculateAll(inputs, routeConfigs = DEFAULT_ROUTE_CONFIGS) {
     daysBun: cfg.daysBun,
     seaDaysFactor: cfg.seaDaysFactor,
     mdo_rate: cfg.mdo_rate,
-    awrip: cfg.awrip,
     loadPChgVal: cfg.loadPChg,
     disPChgOverride: cfg.disPChgOverride,
     namedDisPorts: cfg.namedDisPorts,

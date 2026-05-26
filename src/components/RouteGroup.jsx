@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { DISTANCE_PORTS, PORT_SHORT, PORT_CHARGE_KEY, CHARGE_KEY_TO_PORT } from '../utils/calculations.js';
 
 const fmt0 = (v) =>
@@ -98,8 +98,8 @@ export default function RouteGroup({
             {routes.map((row) => {
               const profit = row.totalFreight - row.totalCost;
               return (
-                <>
-                  <tr key={row.id} className="border-b border-tn-border/40 hover:bg-tn-bg-hi transition-colors">
+                <Fragment key={row.id}>
+                  <tr className="border-b border-tn-border/40 hover:bg-tn-bg-hi transition-colors">
                     <td className="px-3 py-2 sticky left-0 z-10 bg-tn-bg-alt">
                       <RouteLabel id={row.id} origin={row.origin} dest={row.dest} color={c} />
                     </td>
@@ -151,8 +151,8 @@ export default function RouteGroup({
                     <Td>${fmt0(row.totalCost)}</Td>
 
                     <td className="px-3 py-2 text-right whitespace-nowrap">
-                      <span className="font-mono font-bold text-sm text-tn-green">
-                        ${fmt0(profit)}
+                      <span className={`font-mono font-bold text-sm ${profit >= 0 ? 'text-tn-green' : 'text-tn-red'}`}>
+                        {profit < 0 ? '−' : ''}${fmt0(Math.abs(profit))}
                       </span>
                     </td>
 
@@ -171,7 +171,7 @@ export default function RouteGroup({
                   </tr>
 
                   {expandedId === row.id && (
-                    <tr key={row.id + '_edit'} className="bg-tn-bg border-b border-tn-border">
+                    <tr className="bg-tn-bg border-b border-tn-border">
                       <td colSpan={COL_COUNT} className="p-4">
                         <EditForm
                           row={row}
@@ -186,7 +186,7 @@ export default function RouteGroup({
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
 
