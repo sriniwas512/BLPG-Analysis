@@ -25,7 +25,8 @@ export default {
         },
       },
       fontFamily: {
-        mono: ['"JetBrains Mono"', '"Fira Code"', 'Menlo', 'Consolas', 'monospace'],
+        sans: ['Calibri', 'Candara', 'Segoe UI', 'Arial', 'sans-serif'],
+        mono: ['Calibri', 'Candara', 'Segoe UI', 'Arial', 'sans-serif'],
       },
     },
   },
