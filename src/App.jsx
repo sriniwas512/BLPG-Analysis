@@ -6,12 +6,18 @@ import {
 import { exportToExcel } from './utils/excelExport.js';
 import InputPanel from './components/InputPanel.jsx';
 import RouteGroup from './components/RouteGroup.jsx';
+import BetaHedgeTab from './components/BetaHedgeTab.jsx';
 
 const fmtUsd0 = (v) =>
   v == null ? '–' : v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 // Bump this whenever defaults change in a breaking way — forces cache clear on next load
 const STORAGE_VERSION = 'v5';
+
+const TABS = [
+  { id: 'parity', label: 'Voyage Parity' },
+  { id: 'hedge',  label: 'Beta & Hedge'  },
+];
 
 function loadLS(key, fallback) {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; }
@@ -24,6 +30,9 @@ function loadWithVersion(key, fallback) {
 }
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState(() => {
+    try { return localStorage.getItem('blpg-active-tab') || 'parity'; } catch { return 'parity'; }
+  });
   const [inputs, setInputs] = useState(DEFAULT_INPUTS);
 
   const [routeConfigs, setRouteConfigs] = useState(
@@ -33,6 +42,9 @@ export default function App() {
     () => loadWithVersion('blpg-distance-matrix', DEFAULT_DISTANCE_MATRIX)
   );
 
+  useEffect(() => {
+    try { localStorage.setItem('blpg-active-tab', activeTab); } catch {}
+  }, [activeTab]);
   useEffect(() => {
     localStorage.setItem('blpg-version', STORAGE_VERSION);
     localStorage.setItem('blpg-route-configs', JSON.stringify(routeConfigs));
@@ -90,6 +102,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-tn-bg text-tn-fg">
+      {/* ── Header ──────────────────────────────────────────────── */}
       <header className="bg-tn-bg-dark border-b border-tn-border px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-tn-blue to-tn-purple
@@ -109,18 +122,37 @@ export default function App() {
                        hover:text-tn-fg text-sm font-medium px-3 py-2 rounded-lg transition-colors">
             Reset All
           </button>
-          <button onClick={handleExport}
-            className="bg-tn-green hover:bg-tn-green/90 text-tn-bg-dark text-sm font-semibold
-                       px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-tn-green/20">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Export Excel
-          </button>
+          {activeTab === 'parity' && (
+            <button onClick={handleExport}
+              className="bg-tn-green hover:bg-tn-green/90 text-tn-bg-dark text-sm font-semibold
+                         px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-tn-green/20">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export Excel
+            </button>
+          )}
         </div>
       </header>
 
+      {/* ── Tab bar ─────────────────────────────────────────────── */}
+      <nav className="bg-tn-bg-dark border-b border-tn-border px-4 flex gap-0">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-5 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px
+                        ${activeTab === tab.id
+                          ? 'border-tn-cyan text-tn-cyan'
+                          : 'border-transparent text-tn-muted hover:text-tn-fg hover:border-tn-border'}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* ── Main layout ─────────────────────────────────────────── */}
       <div className="flex flex-col xl:flex-row gap-4 p-4">
         <aside className="xl:w-80 flex-shrink-0">
           <InputPanel
@@ -131,88 +163,98 @@ export default function App() {
           />
         </aside>
 
-        <main className="flex-1 min-w-0 space-y-5">
-          {/* ── BENCHMARK HERO ───────────────────────────────────── */}
-          <section className="bg-gradient-to-br from-tn-bg-alt to-tn-bg-dark rounded-xl
-                              border border-tn-cyan/40 shadow-xl shadow-tn-cyan/5 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <div className="text-[10px] uppercase tracking-widest text-tn-cyan font-bold">
-                  Benchmark Voyage
+        <main className="flex-1 min-w-0">
+          {activeTab === 'parity' ? (
+            <div className="space-y-5">
+              {/* ── BENCHMARK HERO ───────────────────────────────── */}
+              <section className="bg-gradient-to-br from-tn-bg-alt to-tn-bg-dark rounded-xl
+                                  border border-tn-cyan/40 shadow-xl shadow-tn-cyan/5 p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-tn-cyan font-bold">
+                      Benchmark Voyage
+                    </div>
+                    <div className="text-lg font-semibold text-tn-fg">
+                      Ras Tanura → Chiba
+                      <span className="ml-2 text-xs text-tn-muted font-mono">(col B)</span>
+                    </div>
+                  </div>
+                  <div className="text-right text-xs text-tn-muted">
+                    Baltic $/pmt → TCE $/day<br/>scales every route's bid below
+                  </div>
                 </div>
-                <div className="text-lg font-semibold text-tn-fg">
-                  Ras Tanura → Chiba
-                  <span className="ml-2 text-xs text-tn-muted font-mono">(col B)</span>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="bg-tn-bg-dark/60 rounded-lg border border-tn-blue/30 p-4">
+                    <label htmlFor="frtRateMain" className="text-[10px] uppercase tracking-widest text-tn-blue font-bold block mb-1">
+                      ① Target Freight Rate
+                    </label>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl text-tn-blue font-mono">$</span>
+                      <input
+                        id="frtRateMain"
+                        type="number" step="0.01" min={0}
+                        value={inputs.frtRate}
+                        onChange={(e) => handleChange('frtRate', parseFloat(e.target.value) || 0)}
+                        className="bg-transparent border-b-2 border-tn-blue/60 focus:border-tn-cyan
+                                   text-4xl font-bold text-tn-cyan font-mono w-32 outline-none text-right"
+                      />
+                      <span className="text-sm text-tn-muted font-mono">/pmt</span>
+                    </div>
+                    <div className="text-[11px] text-tn-muted mt-2 font-mono">
+                      Base case: $207/pmt · cargo {fmtUsd0(inputs.intankMT)} MT
+                    </div>
+                  </div>
+
+                  <div className="bg-tn-bg-dark/60 rounded-lg border border-tn-yellow/30 p-4">
+                    <div className="text-[10px] uppercase tracking-widest text-tn-yellow font-bold mb-1">
+                      ② TCE (locks every other route)
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl text-tn-yellow font-mono">$</span>
+                      <span className="text-4xl font-bold text-tn-yellow font-mono">
+                        {fmtUsd0(benchmark.ratePerDay)}
+                      </span>
+                      <span className="text-sm text-tn-muted font-mono">/day</span>
+                    </div>
+                    <div className="text-[11px] text-tn-muted mt-2 font-mono">
+                      TC monthly equiv: ${fmtUsd0(benchmark.tcMonthly)}/mo
+                      · TCE+bunk ${fmtUsd0(benchmark.tcePlusBunk)}/day
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="text-right text-xs text-tn-muted">
-                Baltic $/pmt → TCE $/day<br/>scales every route's bid below
-              </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+                  <DetailItem label="Total Days" value={benchmark.totalDays.toFixed(2)} unit="d" />
+                  <DetailItem label="Sea Days" value={benchmark.voyageDays.toFixed(2)} unit="d" />
+                  <DetailItem label="Bunker Cost" value={`$${fmtUsd0(benchmark.bunkerCost)}`} />
+                  <DetailItem label="Port Charges" value={`$${fmtUsd0(benchmark.portChg)}`} />
+                  <DetailItem label="Total Revenue" value={`$${fmtUsd0(benchmark.totalCost)}`} />
+                </div>
+              </section>
+
+              {/* ── RUWAIS ORIGIN ──────────────────────────────── */}
+              <RouteGroup
+                title="Ruwais Origin"
+                description="Total gross earnings (USD per voyage) bid on each route, scaled so TCE equals the benchmark $/day."
+                color="orange"
+                routes={r.ruwaisRoutes}
+                benchmarkRate={benchmark.ratePerDay}
+                inputs={inputs}
+                distanceMatrix={distanceMatrix}
+                onAdd={() => handleAddRoute('Ruwais')}
+                onEdit={handleUpdateRoute}
+                onDelete={handleDeleteRoute}
+                onReset={handleResetRoute}
+              />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="bg-tn-bg-dark/60 rounded-lg border border-tn-blue/30 p-4">
-                <label htmlFor="frtRateMain" className="text-[10px] uppercase tracking-widest text-tn-blue font-bold block mb-1">
-                  ① Target Freight Rate
-                </label>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl text-tn-blue font-mono">$</span>
-                  <input
-                    id="frtRateMain"
-                    type="number" step="0.01" min={0}
-                    value={inputs.frtRate}
-                    onChange={(e) => handleChange('frtRate', parseFloat(e.target.value) || 0)}
-                    className="bg-transparent border-b-2 border-tn-blue/60 focus:border-tn-cyan
-                               text-4xl font-bold text-tn-cyan font-mono w-32 outline-none text-right"
-                  />
-                  <span className="text-sm text-tn-muted font-mono">/pmt</span>
-                </div>
-                <div className="text-[11px] text-tn-muted mt-2 font-mono">
-                  Base case: $207/pmt · cargo {fmtUsd0(inputs.intankMT)} MT
-                </div>
-              </div>
-
-              <div className="bg-tn-bg-dark/60 rounded-lg border border-tn-yellow/30 p-4">
-                <div className="text-[10px] uppercase tracking-widest text-tn-yellow font-bold mb-1">
-                  ② TCE (locks every other route)
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl text-tn-yellow font-mono">$</span>
-                  <span className="text-4xl font-bold text-tn-yellow font-mono">
-                    {fmtUsd0(benchmark.ratePerDay)}
-                  </span>
-                  <span className="text-sm text-tn-muted font-mono">/day</span>
-                </div>
-                <div className="text-[11px] text-tn-muted mt-2 font-mono">
-                  TC monthly equiv: ${fmtUsd0(benchmark.tcMonthly)}/mo
-                  · TCE+bunk ${fmtUsd0(benchmark.tcePlusBunk)}/day
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
-              <DetailItem label="Total Days" value={benchmark.totalDays.toFixed(2)} unit="d" />
-              <DetailItem label="Sea Days" value={benchmark.voyageDays.toFixed(2)} unit="d" />
-              <DetailItem label="Bunker Cost" value={`$${fmtUsd0(benchmark.bunkerCost)}`} />
-              <DetailItem label="Port Charges" value={`$${fmtUsd0(benchmark.portChg)}`} />
-              <DetailItem label="Total Revenue" value={`$${fmtUsd0(benchmark.totalCost)}`} />
-            </div>
-          </section>
-
-          {/* ── RUWAIS ORIGIN ────────────────────────────────────── */}
-          <RouteGroup
-            title="Ruwais Origin"
-            description="Total gross earnings (USD per voyage) bid on each route, scaled so TCE equals the benchmark $/day."
-            color="orange"
-            routes={r.ruwaisRoutes}
-            benchmarkRate={benchmark.ratePerDay}
-            inputs={inputs}
-            distanceMatrix={distanceMatrix}
-            onAdd={() => handleAddRoute('Ruwais')}
-            onEdit={handleUpdateRoute}
-            onDelete={handleDeleteRoute}
-            onReset={handleResetRoute}
-          />
+          ) : (
+            <BetaHedgeTab
+              inputs={inputs}
+              onChange={handleChange}
+              routeConfigs={routeConfigs}
+            />
+          )}
         </main>
       </div>
 
