@@ -2,8 +2,6 @@
 // Blue cells receive user input values; all other cells use the original formulas.
 import * as XLSX from 'xlsx';
 
-const COMMISSION = 0.96025; // 1 - 3.975%
-
 function cell(v, fmt) {
   const c = { v, t: typeof v === 'number' ? 'n' : 's' };
   if (fmt) c.z = fmt;
@@ -23,6 +21,9 @@ const PCT  = '0.0%';
 
 export function exportToExcel(inputs, results) {
   const inp = inputs;
+  const commRate  = (inp.commission ?? 3.975) / 100;
+  const netFactor = 1 - commRate;
+  const awripIndia = inp.awripIndia ?? 40000;
 
   // Port charges from inputs
   const pc = {
@@ -181,7 +182,7 @@ export function exportToExcel(inputs, results) {
   Object.entries(indiaFixedData).forEach(([col, d]) => {
     const r = (row) => `${col}${row}`;
 
-    ws[r(3)]  = formula(`((${col}48*${col}43)+(${col}15+${col}16+${col}17+${col}19+${col}20+${col}21))/${COMMISSION}`, USD2);
+    ws[r(3)]  = formula(`((${col}48*${col}43)+(${col}15+${col}16+${col}17+${col}19+${col}20+${col}21))/${netFactor}`, USD2);
     ws[r(4)]  = cell(45000, USD0);
     ws[r(7)]  = cell(1);
     ws[r(8)]  = cell(col === 'U' || col === 'W' ? 3 : 2);
@@ -192,9 +193,9 @@ export function exportToExcel(inputs, results) {
     ws[r(13)] = cell(d.lpc, USD0);
     ws[r(14)] = formula(`=${d.disPChgFormula}`.replace('=', ''), USD0);
     ws[r(15)] = cell(0);
-    ws[r(16)] = cell(d.awrip, USD0);
+    ws[r(16)] = cell(awripIndia, USD0);
     ws[r(17)] = cell(0);
-    ws[r(18)] = formula(`(${r(3)}*3.975%)`, USD0);
+    ws[r(18)] = formula(`(${r(3)}*${commRate})`, USD0);
     ws[r(19)] = cell(0);
     ws[r(20)] = formula(`(${r(44)}*${r(9)})+(${r(45)}*${r(10)})`, USD0);
     ws[r(21)] = formula(`${r(14)}+${r(13)}`, USD0);
