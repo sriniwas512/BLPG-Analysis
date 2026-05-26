@@ -457,27 +457,27 @@ function TcePopover({ row, onClose }) {
         <div className="bg-tn-bg rounded p-3 border border-tn-border leading-relaxed text-tn-fg-dim space-y-0.5">
           <div className="flex justify-between gap-4">
             <span className="text-tn-muted">Gross Earnings × {netPct}% <span className="text-tn-border">(net of {pct}% comm)</span></span>
-            <span className="text-tn-fg">${fmt0(row.totalFreight * netFactor)}</span>
+            <span className="text-tn-fg">${fmt2(row.totalFreight * netFactor)}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-tn-muted">− AWRIP</span>
-            <span className="text-tn-red">−${fmt0(row.awrip)}</span>
+            <span className="text-tn-red">−${fmt2(row.awrip)}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-tn-muted">− Bunker</span>
-            <span className="text-tn-red">−${fmt0(row.bunkerCost)}</span>
+            <span className="text-tn-red">−${fmt2(row.bunkerCost)}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-tn-muted">− Port Charges</span>
-            <span className="text-tn-red">−${fmt0(row.portChg)}</span>
+            <span className="text-tn-red">−${fmt2(row.portChg)}</span>
           </div>
           <div className="flex justify-between gap-4 pt-1 border-t border-tn-border/60 mt-1">
             <span className="text-tn-muted">Net hire</span>
-            <span className="text-tn-fg font-bold">${fmt0(net)}</span>
+            <span className="text-tn-fg font-bold">${fmt2(net)}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-tn-muted">÷ Total Days</span>
-            <span className="text-tn-fg">{fmtD(row.totalDays)} d</span>
+            <span className="text-tn-fg">{row.totalDays.toFixed(4)} d</span>
           </div>
         </div>
 
