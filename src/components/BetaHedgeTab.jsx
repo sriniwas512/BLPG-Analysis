@@ -40,14 +40,15 @@ function getBasisLabel(basis, threshold) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
-  const [actualFreights, setActualFreights] = useState(() => loadLS('blpg-hedge-actual-frt', {}));
+  // grossFreights stores the total voyage gross freight $ per route (not $/pmt)
+  const [grossFreights,  setGrossFreights]  = useState(() => loadLS('blpg-hedge-gross-frt', {}));
   const [deselectedIds,  setDeselectedIds]  = useState(() => loadLS('blpg-hedge-deselected',  []));
   const [hedgeThreshold, setHedgeThreshold] = useState(() => loadLS('blpg-hedge-threshold',  2.0));
   const [positionType,   setPositionType]   = useState(() => loadLS('blpg-hedge-position', 'seller'));
   const [hedgeUnit,      setHedgeUnit]      = useState(() => loadLS('blpg-hedge-unit', 'mt'));
   const [expandedId,     setExpandedId]     = useState(null);
 
-  useEffect(() => { saveLS('blpg-hedge-actual-frt', actualFreights); }, [actualFreights]);
+  useEffect(() => { saveLS('blpg-hedge-gross-frt', grossFreights); }, [grossFreights]);
   useEffect(() => { saveLS('blpg-hedge-deselected',  deselectedIds);  }, [deselectedIds]);
   useEffect(() => { saveLS('blpg-hedge-threshold',   hedgeThreshold); }, [hedgeThreshold]);
   useEffect(() => { saveLS('blpg-hedge-position',    positionType);   }, [positionType]);
@@ -69,16 +70,18 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
   const { routes, benchmark, shockedBenchmark, netFactor } = betaData;
 
   // Enrich each route with per-route hedge fields
+  // grossFrt is stored as total voyage $ — actualFrt ($/pmt) is derived
   const enriched = routes.map((r) => {
     if (r.error) return r;
-    const raw       = actualFreights[r.id];
-    const hasActual = raw != null && raw !== '' && !isNaN(parseFloat(raw));
-    const actualFrt = hasActual ? parseFloat(raw) : null;
-    const basis      = hasActual ? actualFrt - r.frtRatePerMT : null;
+    const raw        = grossFreights[r.id];
+    const hasActual  = raw != null && raw !== '' && !isNaN(parseFloat(raw));
+    const grossFrt   = hasActual ? parseFloat(raw) : null;
+    const actualFrt  = grossFrt != null && r.intank > 0 ? grossFrt / r.intank : null;
+    const basis      = actualFrt != null ? actualFrt - r.frtRatePerMT : null;
     const basisValue = basis != null ? basis * r.intank : null;
     return {
       ...r,
-      actualFrt, hasActual, basis, basisValue,
+      grossFrt, actualFrt, hasActual, basis, basisValue,
       hedgeDir:   getHedgeDirection(basis, hedgeThreshold, positionType),
       basisLabel: getBasisLabel(basis, hedgeThreshold),
       isSelected: !deselectedIds.includes(r.id),
@@ -227,7 +230,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
           <div>
             <h2 className="font-bold text-tn-purple text-base uppercase tracking-wide">Route Beta & Hedge Detail</h2>
             <p className="text-xs text-tn-muted mt-0.5">
-              Beta = Δparity $/pmt per $1 BLPG shock · enter actual physical freight per route to compute basis
+              Beta = Δparity $/pmt per $1 BLPG shock · enter actual gross freight $ per voyage to compute basis
             </p>
           </div>
         </header>
@@ -245,7 +248,8 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                 </th>
                 <Th left>Route</Th>
                 <Th sub="$/pmt">Parity Frt</Th>
-                <Th sub="$/pmt · editable">Actual Physical</Th>
+                <Th sub="$ total · editable">Actual Gross Freight</Th>
+                <Th sub="$/pmt · derived">Actual $/pmt</Th>
                 <Th sub="$/pmt">Basis</Th>
                 <Th sub="$">Basis Value</Th>
                 <Th sub="d">Days</Th>
@@ -253,7 +257,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                 <Th sub="rough">Beta</Th>
                 <Th>Hedge Direction</Th>
                 <Th sub="MT">Hedge Qty</Th>
-                <Th sub="MT">Residual</Th>
+                <Th sub="basis exposure">Residual</Th>
                 <th className="px-2 border-b border-tn-border w-16" />
               </tr>
             </thead>
@@ -263,8 +267,8 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                   key={row.id}
                   row={row}
                   onToggleSelect={() => toggleSelect(row.id)}
-                  actualFrtRaw={actualFreights[row.id] ?? ''}
-                  onActualFrtChange={(v) => setActualFreights((p) => ({ ...p, [row.id]: v }))}
+                  grossFrtRaw={grossFreights[row.id] ?? ''}
+                  onGrossFrtChange={(v) => setGrossFreights((p) => ({ ...p, [row.id]: v }))}
                   isExpanded={expandedId === row.id}
                   onToggleExpand={() => setExpandedId(expandedId === row.id ? null : row.id)}
                   inputs={inputs}
@@ -276,7 +280,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
 
               {/* Totals row */}
               <tr className="bg-tn-bg-dark/60 border-t-2 border-tn-purple/30">
-                <td colSpan={10} className="px-3 py-2 text-right text-xs font-mono text-tn-muted">
+                <td colSpan={11} className="px-3 py-2 text-right text-xs font-mono text-tn-muted">
                   Total hedge — selected routes ({valid.filter((r) => r.isSelected).length} routes)
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-bold text-tn-cyan">
@@ -299,14 +303,14 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
 // ── Route row with collapsible calc panel ─────────────────────────────────────
 
 function RouteHedgeRow({
-  row, onToggleSelect, actualFrtRaw, onActualFrtChange,
+  row, onToggleSelect, grossFrtRaw, onGrossFrtChange,
   isExpanded, onToggleExpand, inputs, benchmark, shockedBenchmark, hedgeUnit,
 }) {
   if (row.error) {
     return (
       <tr className="border-b border-tn-border/40 bg-tn-bg-alt/50">
         <td className="px-3 py-2" />
-        <td className="px-3 py-2 text-xs text-tn-muted font-mono" colSpan={12}>
+        <td className="px-3 py-2 text-xs text-tn-muted font-mono" colSpan={13}>
           {row.origin} → {row.dest} — {row.error === 'zero_cargo' ? 'cargo MT is 0, skipped' : 'calculation error'}
         </td>
       </tr>
@@ -316,10 +320,10 @@ function RouteHedgeRow({
   const basisColor = row.basis == null ? 'text-tn-muted'
     : row.basis > 0 ? 'text-tn-green' : row.basis < 0 ? 'text-tn-red' : 'text-tn-yellow';
 
-  const betaWarn = row.warnings?.includes('beta_out_of_range');
+  const betaWarn    = row.warnings?.includes('beta_out_of_range');
   const betaMismatch = row.warnings?.includes('beta_mismatch');
 
-  const COL_COUNT = 13;
+  const COL_COUNT = 14;
 
   return (
     <>
@@ -340,19 +344,31 @@ function RouteHedgeRow({
         {/* Parity freight */}
         <Td>
           <span className="font-mono text-tn-fg">${fmt2(row.frtRatePerMT)}</span>
+          <div className="text-[9px] text-tn-muted mt-0.5">
+            ${fmt0(row.totalFreight)} gross
+          </div>
         </Td>
 
-        {/* Actual freight — editable */}
+        {/* Actual gross freight — editable total $ */}
         <td className="px-3 py-2 text-right">
           <input
-            type="number" step="0.01" min={0}
-            value={actualFrtRaw}
-            placeholder="—"
-            onChange={(e) => onActualFrtChange(e.target.value)}
-            className="w-24 bg-tn-bg-dark border border-tn-blue/40 rounded px-2 py-0.5 text-right
+            type="number" step="1000" min={0}
+            value={grossFrtRaw}
+            placeholder="enter $"
+            onChange={(e) => onGrossFrtChange(e.target.value)}
+            className="w-28 bg-tn-bg-dark border border-tn-blue/40 rounded px-2 py-0.5 text-right
                        text-sm font-mono text-tn-cyan focus:outline-none focus:border-tn-cyan
                        focus:ring-1 focus:ring-tn-cyan/30 transition-colors placeholder-tn-border"
           />
+        </td>
+
+        {/* Derived actual $/pmt */}
+        <td className="px-3 py-2 text-right">
+          {row.actualFrt == null ? (
+            <span className="text-[10px] text-tn-muted italic">–</span>
+          ) : (
+            <span className="font-mono text-sm text-tn-cyan">${fmt2(row.actualFrt)}</span>
+          )}
         </td>
 
         {/* Basis */}
@@ -420,10 +436,11 @@ function RouteHedgeRow({
           </div>
         </td>
 
-        {/* Residual */}
-        <td className="px-3 py-2 text-right">
+        {/* Residual — India basis exposure */}
+        <td className="px-3 py-2 text-right"
+          title={`Residual = cargo − hedge = ${fmt0(row.intank)} − ${fmt0(row.hedgeMT)} MT.\nThis is NOT unhedged cargo. It is the portion of freight movement not explained by the BLPG benchmark under the beta model — i.e. India route basis risk that cannot be hedged with BLPG paper.`}>
           <div className="font-mono text-xs text-tn-fg-dim">{fmt0(row.residualMT)} MT</div>
-          <div className="text-[9px] text-tn-muted font-mono">unexplained</div>
+          <div className="text-[9px] text-tn-muted">India basis</div>
         </td>
 
         {/* Expand button */}
@@ -522,19 +539,34 @@ function CalcPanel({ row, inputs, benchmark, shockedBenchmark }) {
 
         {/* Hedge */}
         <CalcSection title="Hedge Calculation" color="yellow">
-          <CalcRow label="Route cargo (MT)"          value={fmt0(row.intank)} />
-          <CalcRow label="× Finite diff beta"         value={row.beta.toFixed(4)} />
-          <CalcRow label="= Hedge quantity"           value={`${fmt0(row.hedgeMT)} MT`} highlight />
-          <CalcRow label="Rounded to ±500 MT"         value={`${fmt0(row.hedgeRounded500)} MT`} />
-          <CalcRow label="Rounded to ±1,000 MT"       value={`${fmt0(row.hedgeRounded1000)} MT`} />
-          <CalcRow label="Residual (unexplained by β)" value={`${fmt0(row.residualMT)} MT`} />
+          <CalcRow label="Route cargo (MT)"        value={fmt0(row.intank)} />
+          <CalcRow label="× Finite diff beta"       value={row.beta.toFixed(4)} />
+          <CalcRow label="= Hedge quantity"         value={`${fmt0(row.hedgeMT)} MT`} highlight />
+          <CalcRow label="Rounded to ±500 MT"       value={`${fmt0(row.hedgeRounded500)} MT`} />
+          <CalcRow label="Rounded to ±1,000 MT"     value={`${fmt0(row.hedgeRounded1000)} MT`} />
+          <div className="border-t border-tn-border/50 pt-1 mt-1 space-y-0.5">
+            <CalcRow label="Residual (cargo − hedge)" value={`${fmt0(row.residualMT)} MT`} />
+            <div className="text-[10px] text-tn-muted leading-relaxed pt-0.5">
+              The residual is <span className="text-tn-fg">not</span> unhedged cargo.
+              It is the portion of this route's freight movement that does <span className="text-tn-fg">not</span> correlate
+              with BLPG benchmark moves under this beta model.
+              Beta = {row.beta.toFixed(4)} means only {(row.beta * 100).toFixed(1)}% of
+              the route's freight sensitivity is explained by BLPG.
+              The remaining {((1 - row.beta) * 100).toFixed(1)}% is India route basis risk —
+              driven by local supply/demand, port congestion, charterer preferences — and
+              cannot be hedged with BLPG paper.
+            </div>
+          </div>
         </CalcSection>
 
         {/* Basis (if available) */}
         {row.hasActual && (
           <CalcSection title="Basis Analysis" color="green">
-            <CalcRow label="Actual physical freight"  value={`$${fmt2(row.actualFrt)}/pmt`} />
-            <CalcRow label="Model parity freight"     value={`$${fmt2(row.frtRatePerMT)}/pmt`} />
+            <CalcRow label="Actual gross freight"     value={`$${fmt0(row.grossFrt)}`} />
+            <CalcRow label="÷ Cargo (MT)"             value={fmt0(row.intank)} />
+            <CalcRow label="= Actual $/pmt"           value={`$${fmt2(row.actualFrt)}/pmt`} highlight />
+            <CalcRow label="Model parity $/pmt"       value={`$${fmt2(row.frtRatePerMT)}/pmt`} />
+            <CalcRow label="Parity gross freight"     value={`$${fmt0(row.totalFreight)}`} />
             <CalcRow label="Basis (actual − parity)"  value={signFmt(row.basis) + '/pmt'} highlight />
             <CalcRow label="Basis value (× cargo)"    value={`${row.basisValue >= 0 ? '+' : ''}$${fmt0(row.basisValue)}`} />
             <CalcRow label="Signal"                   value={row.hedgeDir?.text ?? '—'} />
