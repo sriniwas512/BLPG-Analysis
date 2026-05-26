@@ -21,13 +21,13 @@ function saveLS(key, value) {
 function getHedgeDirection(basis, threshold, positionType) {
   if (basis == null || isNaN(basis)) return { text: '—', cls: 'text-tn-muted' };
   if (positionType === 'seller') {
-    if (basis >  threshold) return { text: 'Sell BLPG paper',              cls: 'text-tn-green' };
-    if (basis < -threshold) return { text: 'No hedge — avoid / buy back',  cls: 'text-tn-red'   };
-    return                         { text: 'No clear hedge',               cls: 'text-tn-muted'  };
+    if (basis >  threshold) return { text: 'Sell BLPG1 FFA',                   cls: 'text-tn-green' };
+    if (basis < -threshold) return { text: 'No hedge — avoid / buy back',       cls: 'text-tn-red'   };
+    return                         { text: 'No clear hedge',                    cls: 'text-tn-muted'  };
   } else {
-    if (basis < -threshold) return { text: 'Buy BLPG paper',               cls: 'text-tn-green' };
-    if (basis >  threshold) return { text: 'No hedge — physical expensive', cls: 'text-tn-red'   };
-    return                         { text: 'No clear hedge',               cls: 'text-tn-muted'  };
+    if (basis < -threshold) return { text: 'Buy BLPG1 FFA',                     cls: 'text-tn-green' };
+    if (basis >  threshold) return { text: 'No hedge — phys. expensive vs BLPG1', cls: 'text-tn-red' };
+    return                         { text: 'No clear hedge',                    cls: 'text-tn-muted'  };
   }
 }
 
@@ -158,13 +158,25 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                          focus:outline-none focus:border-tn-cyan focus:ring-1 focus:ring-tn-cyan/30"
             >
               <option value="mt">Metric tons (MT)</option>
-              <option value="lot">Lot equivalent (1,000 MT per lot)</option>
+              <option value="lot">BLPG1-FFA lots (44,000 MT/lot)</option>
             </select>
           </CtrlField>
         </div>
-        <p className="text-[10px] text-tn-muted font-mono mt-3 leading-relaxed">
+        <div className="mt-3 pt-3 border-t border-tn-border/50 grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] font-mono text-tn-muted leading-relaxed">
+          <div>
+            <span className="text-tn-purple font-bold">BLPG1-FFA contract: </span>
+            $/mt basis · 44,000 MT/lot (5% option → 46,200 MT) · monthly settlement
+            (CurMon–+5Mon, CurQ–+5Q, Cal+1/+2) · 1.25% commission total
+          </div>
+          <div>
+            <span className="text-tn-yellow font-bold">Commission note: </span>
+            Physical India routes use {inputs.commission ?? 3.975}% (address + brokerage).
+            Baltic BLPG1-FFA clears at 1.25% — do not mix the two when sizing hedges.
+          </div>
+        </div>
+        <p className="text-[10px] text-tn-muted font-mono mt-2 leading-relaxed">
           This is a rough model hedge based on parity engine beta, not a perfect arbitrage.
-          Beta hedges only the BLPG benchmark component. Basis risk, bunker basis, and port risk remain.
+          Beta hedges only the BLPG1 benchmark component. Basis risk, bunker basis, and port risk remain.
         </p>
       </section>
 
@@ -207,7 +219,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
             <>
               <div className="text-lg font-bold font-mono text-tn-yellow">
                 {hedgeUnit === 'lot'
-                  ? `${Math.round(largestHedge.hedgeMT / 1000)} lots`
+                  ? `${Math.round(largestHedge.hedgeMT / 44000)} lots`
                   : `${fmt0(largestHedge.hedgeMT)} MT`}
               </div>
               <div className="text-[10px] text-tn-muted truncate">{largestHedge.dest}</div>
@@ -217,10 +229,10 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
         <SCard label={`Total Hedge (${valid.filter((r) => r.isSelected).length}/${routes.length} sel.)`} color="orange">
           <div className="text-lg font-bold font-mono text-tn-orange">
             {hedgeUnit === 'lot'
-              ? `${Math.round(totalHedge / 1000)} lots`
+              ? `${Math.round(totalHedge / 44000)} lots`
               : `${fmt0(totalHedge)} MT`}
           </div>
-          <div className="text-[10px] text-tn-muted">BLPG paper equiv.</div>
+          <div className="text-[10px] text-tn-muted">BLPG1 FFA equiv.</div>
         </SCard>
       </div>
 
@@ -285,7 +297,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-bold text-tn-cyan">
                   {hedgeUnit === 'lot'
-                    ? `~${Math.round(totalHedge / 1000)} lots`
+                    ? `~${Math.round(totalHedge / 44000)} lots`
                     : `${fmt0(totalHedge)} MT`}
                 </td>
                 <td colSpan={2} />
@@ -428,7 +440,7 @@ function RouteHedgeRow({
         <td className="px-3 py-2 text-right">
           <div className="font-mono text-sm text-tn-yellow font-semibold">
             {hedgeUnit === 'lot'
-              ? `~${Math.round(row.hedgeMT / 1000)} lots`
+              ? `~${Math.round(row.hedgeMT / 44000)} lots`
               : `${fmt0(row.hedgeMT)} MT`}
           </div>
           <div className="text-[9px] font-mono text-tn-muted">
@@ -438,7 +450,7 @@ function RouteHedgeRow({
 
         {/* Residual — India basis exposure */}
         <td className="px-3 py-2 text-right"
-          title={`Residual = cargo − hedge = ${fmt0(row.intank)} − ${fmt0(row.hedgeMT)} MT.\nThis is NOT unhedged cargo. It is the portion of freight movement not explained by the BLPG benchmark under the beta model — i.e. India route basis risk that cannot be hedged with BLPG paper.`}>
+          title={`Residual = cargo − hedge = ${fmt0(row.intank)} − ${fmt0(row.hedgeMT)} MT.\nThis is NOT unhedged cargo. It is the portion of freight movement not explained by the BLPG benchmark under the beta model — i.e. India route basis risk that cannot be hedged with BLPG1 FFA.`}>
           <div className="font-mono text-xs text-tn-fg-dim">{fmt0(row.residualMT)} MT</div>
           <div className="text-[9px] text-tn-muted">India basis</div>
         </td>
@@ -489,7 +501,7 @@ function CalcPanel({ row, inputs, benchmark, shockedBenchmark }) {
     `This route's model parity freight moved from $${fmt2(row.frtRatePerMT)}/pmt to $${fmt2(row.shockedFrtRatePerMT)}/pmt ` +
     `— a change of $${row.finiteBeta.toFixed(4)}/pmt. That is the rough beta. ` +
     `For ${fmt0(row.intank)} MT cargo, the model hedge is ${fmt0(row.intank)} × ${row.beta.toFixed(4)} = ` +
-    `${fmt0(row.hedgeMT)} MT of BLPG paper equivalent (${fmt0(row.hedgeRounded500)} MT rounded to nearest 500).`;
+    `${fmt0(row.hedgeMT)} MT of BLPG1-FFA equivalent (${fmt0(row.hedgeRounded500)} MT rounded to nearest 500).`;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-[11px] font-mono">
@@ -554,7 +566,7 @@ function CalcPanel({ row, inputs, benchmark, shockedBenchmark }) {
               the route's freight sensitivity is explained by BLPG.
               The remaining {((1 - row.beta) * 100).toFixed(1)}% is India route basis risk —
               driven by local supply/demand, port congestion, charterer preferences — and
-              cannot be hedged with BLPG paper.
+              cannot be hedged with BLPG1 FFA.
             </div>
           </div>
         </CalcSection>
@@ -602,7 +614,7 @@ function CommercialWarning() {
     <div className="bg-tn-bg-dark rounded-xl border border-tn-red/20 p-4 text-[10px] font-mono text-tn-muted leading-relaxed">
       <span className="text-tn-red font-bold">⚠ IMPORTANT — MODEL LIMITATIONS: </span>
       This hedge ratio is a rough model beta based on the app's parity engine.
-      It hedges the BLPG benchmark component only.
+      It hedges the BLPG1 benchmark component only.
       It does <strong className="text-tn-fg">not</strong> remove:
       India route basis risk · port delay risk · bunker basis risk ·
       vessel performance risk · liquidity risk · settlement mismatch.

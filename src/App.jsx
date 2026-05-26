@@ -12,7 +12,7 @@ const fmtUsd0 = (v) =>
   v == null ? '–' : v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 // Bump this whenever defaults change in a breaking way — forces cache clear on next load
-const STORAGE_VERSION = 'v5';
+const STORAGE_VERSION = 'v6';
 
 const TABS = [
   { id: 'parity', label: 'Voyage Parity' },

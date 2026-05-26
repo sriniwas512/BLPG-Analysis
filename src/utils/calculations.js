@@ -13,9 +13,10 @@ export const DEFAULT_INPUTS = {
   awripIndia: 40000,   // war risk + insurance + P&I, applies to all India routes
   spdBlst: 16,
   spdLadn: 16,
-  blstIFO: 45,
-  ladnIFO: 45,
-  portIFO: 11,
+  blstIFO: 43,      // VLGC84: 16 kts ballast, 43 MT IFO/day
+  ladnIFO: 48,      // VLGC84: 16 kts laden, 48 MT IFO/day
+  portIFO: 10,      // VLGC84: port working (loading + disch), 10 MT IFO/day
+  idleIFO: 5,       // VLGC84: port idle (NOR +6h, bunkering), 5 MT IFO/day
   seaMDO: 0.1,
   portMDO: 0.1,
   idleMDO: 0.1,
@@ -138,8 +139,10 @@ function calcB(inp) {
   const portDaysFactors = inp.norPlus6B + inp.daysLoadingB + inp.daysDischB + inp.daysBunB; // B36+B37+B38+B39
   const totalDays = voyageDays + portDaysFactors;                                 // B43
 
+  const workingDaysB = inp.daysLoadingB + inp.daysDischB;
+  const idleDaysB    = inp.norPlus6B + inp.daysBunB;
   const ifoMT = inp.blstIFO * blstDays + inp.ladnIFO * ladnDays
-    + portDaysFactors * inp.portIFO;                                              // B44
+    + workingDaysB * inp.portIFO + idleDaysB * (inp.idleIFO ?? 5);               // B44
   const mdoMT = inp.seaMDO * voyageDays + inp.portMDO * portDaysFactors;                          // B45
 
   const bunkerCost = ifoMT * inp.ifoPrice + mdoMT * inp.mdoPrice; // B20
@@ -173,7 +176,9 @@ function calcIndiaRoute(cfg, inp, bResults) {
   const portDaysFactors = cfg.norPlus6 + cfg.daysLoading + cfg.daysDisch + cfg.daysBun;
   const totalDays = voyageDays + portDaysFactors;
 
-  const ifoMT = voyageDays * inp.ladnIFO + portDaysFactors * inp.portIFO;
+  const workingDays = cfg.daysLoading + cfg.daysDisch;
+  const idleDays    = cfg.norPlus6 + cfg.daysBun;
+  const ifoMT = voyageDays * inp.ladnIFO + workingDays * inp.portIFO + idleDays * (inp.idleIFO ?? 5);
   const mdoRate = cfg.mdo_rate === 'portMDO' ? inp.portMDO : inp.idleMDO;
   // MDO: SUM(rows 33-41) × rate — matches Excel formula which sums blst+ladn+voyage+portDays
   const mdoMT = (blstDays + ladnDays + voyageDays + portDaysFactors) * mdoRate;

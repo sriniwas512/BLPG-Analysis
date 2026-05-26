@@ -79,7 +79,10 @@ export default function InputPanel({ inputs: inp, onChange, distanceMatrix, onMa
       <NumInput label="Speed Laden" id="spdLadn" value={inp.spdLadn} onChange={onChange} unit="kn" min={1} />
       <NumInput label="Ballast IFO" id="blstIFO" value={inp.blstIFO} onChange={onChange} unit="MT/d" min={0} />
       <NumInput label="Laden IFO" id="ladnIFO" value={inp.ladnIFO} onChange={onChange} unit="MT/d" min={0} />
-      <NumInput label="Port IFO" id="portIFO" value={inp.portIFO} onChange={onChange} unit="MT/d" min={0} />
+      <NumInput label="Port IFO wkg" id="portIFO" value={inp.portIFO} onChange={onChange} unit="MT/d" min={0}
+        tooltip="VLGC84 working port days (loading + discharge)" />
+      <NumInput label="Idle IFO" id="idleIFO" value={inp.idleIFO ?? 5} onChange={onChange} unit="MT/d" min={0}
+        tooltip="VLGC84 idle port days (NOR +6h, bunkering)" />
       <NumInput label="Sea MDO" id="seaMDO" value={inp.seaMDO} onChange={onChange} unit="MT/d" step={0.01} min={0} />
       <NumInput label="Port MDO" id="portMDO" value={inp.portMDO} onChange={onChange} unit="MT/d" step={0.01} min={0} />
       <NumInput label="Idle MDO" id="idleMDO" value={inp.idleMDO} onChange={onChange} unit="MT/d" step={0.01} min={0} />
