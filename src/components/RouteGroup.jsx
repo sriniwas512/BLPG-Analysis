@@ -20,6 +20,7 @@ export default function RouteGroup({
   const [expandedId, setExpandedId] = useState(null);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [tcePopoverId, setTcePopoverId] = useState(null);
+  const [freightPopoverId, setFreightPopoverId] = useState(null);
   if (!routes || routes.length === 0) return null;
   const c = COLOR_MAP[color];
 
@@ -110,11 +111,18 @@ export default function RouteGroup({
                       </span>
                     </td>
 
-                    <td className="px-3 py-2 text-right whitespace-nowrap">
-                      <span className="font-mono text-tn-fg text-xs">
+                    <td className="px-3 py-2 relative text-right whitespace-nowrap">
+                      <button
+                        onClick={() => setFreightPopoverId(freightPopoverId === row.id ? null : row.id)}
+                        className="font-mono text-tn-fg text-xs underline decoration-dotted hover:text-tn-cyan transition-colors"
+                        title="Click to see formula"
+                      >
                         ${fmt2(row.frtRatePerMT)}
                         <span className="text-[10px] text-tn-muted ml-1">/pmt</span>
-                      </span>
+                      </button>
+                      {freightPopoverId === row.id && (
+                        <FreightPopover row={row} onClose={() => setFreightPopoverId(null)} />
+                      )}
                     </td>
 
                     <Td>{fmtD(row.totalDays)}</Td>
@@ -476,6 +484,68 @@ function TcePopover({ row, onClose }) {
         <div className="flex justify-between items-baseline pt-1 border-t border-tn-border">
           <span className="text-tn-muted text-[10px]">= Implied TCE/Day</span>
           <span className="text-tn-cyan font-bold text-base">${fmt0(row.impliedTce)}<span className="text-tn-muted text-xs font-normal">/day</span></span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Freight rate breakdown popover ───────────────────────────────────────────
+
+function FreightPopover({ row, onClose }) {
+  const commRate  = row.commRate ?? 0.03975;
+  const netFactor = 1 - commRate;
+  const pct       = (commRate * 100).toFixed(3);
+  const timeCost  = row.tce * row.totalDays;
+  return (
+    <div className="absolute z-50 top-full right-0 mt-1 w-[360px] bg-tn-bg-dark border border-tn-green/30
+                    rounded-lg p-4 shadow-2xl shadow-black/50 text-left">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-tn-green font-bold">
+          Implied Freight — {row.dest}
+        </div>
+        <button onClick={onClose} className="text-tn-muted hover:text-tn-fg text-xs leading-none ml-2 flex-shrink-0">✕</button>
+      </div>
+
+      <div className="font-mono text-[11px] space-y-2">
+        <div className="text-tn-muted leading-relaxed">
+          ( TCE × Days + AWRIP + Bunker + Port ) ÷ (1 − {pct}%) ÷ Cargo MT
+        </div>
+
+        <div className="bg-tn-bg rounded p-3 border border-tn-border leading-relaxed text-tn-fg-dim space-y-0.5">
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">TCE × Total Days</span>
+            <span className="text-tn-fg">${fmt0(timeCost)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">+ AWRIP</span>
+            <span className="text-tn-fg">+${fmt0(row.awrip)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">+ Bunker</span>
+            <span className="text-tn-fg">+${fmt0(row.bunkerCost)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">+ Port Charges</span>
+            <span className="text-tn-fg">+${fmt0(row.portChg)}</span>
+          </div>
+          <div className="flex justify-between gap-4 pt-1 border-t border-tn-border/60 mt-1">
+            <span className="text-tn-muted">Sub-total</span>
+            <span className="text-tn-fg font-bold">${fmt0(timeCost + row.awrip + row.bunkerCost + row.portChg)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-tn-muted">÷ (1 − {pct}% commission)</span>
+            <span className="text-tn-fg">= ${fmt0(row.totalFreight)}</span>
+          </div>
+          <div className="flex justify-between gap-4 pt-1 border-t border-tn-border/60 mt-1">
+            <span className="text-tn-muted">÷ Cargo ({fmt0(row.intank)} MT)</span>
+            <span className="text-tn-fg">${fmt2(row.frtRatePerMT)}/pmt</span>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-baseline pt-1 border-t border-tn-border">
+          <span className="text-tn-muted text-[10px]">= Implied Freight</span>
+          <span className="text-tn-green font-bold text-base">${fmt2(row.frtRatePerMT)}<span className="text-tn-muted text-xs font-normal">/pmt</span></span>
         </div>
       </div>
     </div>
