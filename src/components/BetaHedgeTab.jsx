@@ -18,6 +18,18 @@ function saveLS(key, value) {
 }
 
 // ── Business logic ────────────────────────────────────────────────────────────
+function getExpiryInfo(loadingMonthStr) {
+  if (!loadingMonthStr) return null;
+  const [y, m] = loadingMonthStr.split('-').map(Number);
+  if (!y || !m) return null;
+  const today = new Date();
+  const diff = (y - today.getFullYear()) * 12 + (m - (today.getMonth() + 1));
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const label = `${MONTHS[m - 1]}-${String(y).slice(-2)}`;
+  const tenor = diff < 0 ? 'expired' : diff === 0 ? 'CurMon' : `+${diff}Mon`;
+  return { label, tenor, diff, illiquid: diff > 5 };
+}
+
 function getHedgeDirection(basis, threshold, positionType) {
   if (basis == null || isNaN(basis)) return { text: '—', cls: 'text-tn-muted' };
   if (positionType === 'seller') {
@@ -46,13 +58,17 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
   const [hedgeThreshold, setHedgeThreshold] = useState(() => loadLS('blpg-hedge-threshold',  2.0));
   const [positionType,   setPositionType]   = useState(() => loadLS('blpg-hedge-position', 'seller'));
   const [hedgeUnit,      setHedgeUnit]      = useState(() => loadLS('blpg-hedge-unit', 'mt'));
-  const [expandedId,     setExpandedId]     = useState(null);
+  const [expandedId,          setExpandedId]          = useState(null);
+  const [defaultLoadingMonth, setDefaultLoadingMonth] = useState(() => loadLS('blpg-hedge-default-month', ''));
+  const [routeLoadingMonths,  setRouteLoadingMonths]  = useState(() => loadLS('blpg-hedge-route-months', {}));
 
   useEffect(() => { saveLS('blpg-hedge-gross-frt', grossFreights); }, [grossFreights]);
   useEffect(() => { saveLS('blpg-hedge-deselected',  deselectedIds);  }, [deselectedIds]);
   useEffect(() => { saveLS('blpg-hedge-threshold',   hedgeThreshold); }, [hedgeThreshold]);
   useEffect(() => { saveLS('blpg-hedge-position',    positionType);   }, [positionType]);
-  useEffect(() => { saveLS('blpg-hedge-unit',        hedgeUnit);      }, [hedgeUnit]);
+  useEffect(() => { saveLS('blpg-hedge-unit',          hedgeUnit);           }, [hedgeUnit]);
+  useEffect(() => { saveLS('blpg-hedge-default-month', defaultLoadingMonth); }, [defaultLoadingMonth]);
+  useEffect(() => { saveLS('blpg-hedge-route-months',  routeLoadingMonths);  }, [routeLoadingMonths]);
 
   const betaData = useMemo(
     () => calculateRouteBetas(inputs, routeConfigs),
@@ -79,12 +95,15 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
     const actualFrt  = grossFrt != null && r.intank > 0 ? grossFrt / r.intank : null;
     const basis      = actualFrt != null ? actualFrt - r.frtRatePerMT : null;
     const basisValue = basis != null ? basis * r.intank : null;
+    const loadingMonth = routeLoadingMonths[r.id] || defaultLoadingMonth || '';
+    const expiryInfo   = getExpiryInfo(loadingMonth);
     return {
       ...r,
       grossFrt, actualFrt, hasActual, basis, basisValue,
       hedgeDir:   getHedgeDirection(basis, hedgeThreshold, positionType),
       basisLabel: getBasisLabel(basis, hedgeThreshold),
       isSelected: !deselectedIds.includes(r.id),
+      loadingMonth, expiryInfo,
     };
   });
 
@@ -160,6 +179,15 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
               <option value="mt">Metric tons (MT)</option>
               <option value="lot">BLPG1-FFA lots (44,000 MT/lot)</option>
             </select>
+          </CtrlField>
+          <CtrlField label="Default Loading Month">
+            <input
+              type="month"
+              value={defaultLoadingMonth}
+              onChange={(e) => setDefaultLoadingMonth(e.target.value)}
+              className="bg-tn-bg-dark border border-tn-blue/40 rounded px-2 py-1 text-sm text-tn-cyan font-mono
+                         focus:outline-none focus:border-tn-cyan focus:ring-1 focus:ring-tn-cyan/30"
+            />
           </CtrlField>
         </div>
         <div className="mt-3 pt-3 border-t border-tn-border/50 grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] font-mono text-tn-muted leading-relaxed">
@@ -268,6 +296,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                 <Th sub="MT">Cargo</Th>
                 <Th sub="rough">Beta</Th>
                 <Th>Hedge Direction</Th>
+                <Th sub="loading month · expiry">Contract</Th>
                 <Th sub="MT">Hedge Qty</Th>
                 <Th sub="basis exposure">Residual</Th>
                 <th className="px-2 border-b border-tn-border w-16" />
@@ -281,6 +310,8 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                   onToggleSelect={() => toggleSelect(row.id)}
                   grossFrtRaw={grossFreights[row.id] ?? ''}
                   onGrossFrtChange={(v) => setGrossFreights((p) => ({ ...p, [row.id]: v }))}
+                  loadingMonthRaw={routeLoadingMonths[row.id] ?? ''}
+                  onLoadingMonthChange={(v) => setRouteLoadingMonths((p) => ({ ...p, [row.id]: v }))}
                   isExpanded={expandedId === row.id}
                   onToggleExpand={() => setExpandedId(expandedId === row.id ? null : row.id)}
                   inputs={inputs}
@@ -292,7 +323,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
 
               {/* Totals row */}
               <tr className="bg-tn-bg-dark/60 border-t-2 border-tn-purple/30">
-                <td colSpan={11} className="px-3 py-2 text-right text-xs font-mono text-tn-muted">
+                <td colSpan={12} className="px-3 py-2 text-right text-xs font-mono text-tn-muted">
                   Total hedge — selected routes ({valid.filter((r) => r.isSelected).length} routes)
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-bold text-tn-cyan">
@@ -316,6 +347,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
 
 function RouteHedgeRow({
   row, onToggleSelect, grossFrtRaw, onGrossFrtChange,
+  loadingMonthRaw, onLoadingMonthChange,
   isExpanded, onToggleExpand, inputs, benchmark, shockedBenchmark, hedgeUnit,
 }) {
   if (row.error) {
@@ -335,7 +367,7 @@ function RouteHedgeRow({
   const betaWarn    = row.warnings?.includes('beta_out_of_range');
   const betaMismatch = row.warnings?.includes('beta_mismatch');
 
-  const COL_COUNT = 14;
+  const COL_COUNT = 15;
 
   return (
     <>
@@ -436,6 +468,31 @@ function RouteHedgeRow({
           </span>
         </td>
 
+        {/* Contract — loading month + expiry */}
+        <td className="px-3 py-2 text-right">
+          <input
+            type="month"
+            value={loadingMonthRaw}
+            title={loadingMonthRaw ? 'Route override' : 'Using global default (or blank)'}
+            onChange={(e) => onLoadingMonthChange(e.target.value)}
+            className="w-28 bg-tn-bg-dark border border-tn-border/50 rounded px-1.5 py-0.5
+                       text-[11px] font-mono text-tn-cyan focus:outline-none focus:border-tn-cyan
+                       focus:ring-1 focus:ring-tn-cyan/30 transition-colors"
+          />
+          {row.expiryInfo ? (
+            <div className={`text-[10px] font-mono mt-0.5 ${
+              row.expiryInfo.diff < 0      ? 'text-tn-red'
+              : row.expiryInfo.illiquid   ? 'text-tn-yellow'
+              : 'text-tn-muted'
+            }`}>
+              {row.expiryInfo.label} · {row.expiryInfo.tenor}
+              {row.expiryInfo.illiquid && !row.expiryInfo.diff < 0 && ' ⚠'}
+            </div>
+          ) : (
+            <div className="text-[10px] font-mono text-tn-border mt-0.5 italic">no month set</div>
+          )}
+        </td>
+
         {/* Hedge quantity */}
         <td className="px-3 py-2 text-right">
           <div className="font-mono text-sm text-tn-yellow font-semibold">
@@ -495,13 +552,18 @@ function CalcPanel({ row, inputs, benchmark, shockedBenchmark }) {
   const diffOK    = row.betaDiff < 0.001;
   const diffWarn  = row.betaDiff >= 0.01;
 
+  const expiryStr = row.expiryInfo
+    ? ` Sell the ${row.expiryInfo.label} BLPG1-FFA contract (${row.expiryInfo.tenor}).`
+    : ' Set the loading month to identify the correct FFA expiry.';
+
   const plainEnglish = `BLPG benchmark freight was $${inputs.frtRate}/pmt on ${fmt0(bmCargo)} MT cargo (Route B). ` +
     `A +$1 shock (to $${inputs.frtRate + 1}/pmt) raised benchmark TCE from $${fmt0(benchmark.ratePerDay)}/day to ` +
     `$${fmt0(shockedBenchmark.ratePerDay)}/day (+$${fmt0(deltaTce)}/day). ` +
     `This route's model parity freight moved from $${fmt2(row.frtRatePerMT)}/pmt to $${fmt2(row.shockedFrtRatePerMT)}/pmt ` +
     `— a change of $${row.finiteBeta.toFixed(4)}/pmt. That is the rough beta. ` +
     `For ${fmt0(row.intank)} MT cargo, the model hedge is ${fmt0(row.intank)} × ${row.beta.toFixed(4)} = ` +
-    `${fmt0(row.hedgeMT)} MT of BLPG1-FFA equivalent (${fmt0(row.hedgeRounded500)} MT rounded to nearest 500).`;
+    `${fmt0(row.hedgeMT)} MT of BLPG1-FFA equivalent (${fmt0(row.hedgeRounded500)} MT rounded to nearest 500).` +
+    expiryStr;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-[11px] font-mono">
@@ -556,6 +618,17 @@ function CalcPanel({ row, inputs, benchmark, shockedBenchmark }) {
           <CalcRow label="= Hedge quantity"         value={`${fmt0(row.hedgeMT)} MT`} highlight />
           <CalcRow label="Rounded to ±500 MT"       value={`${fmt0(row.hedgeRounded500)} MT`} />
           <CalcRow label="Rounded to ±1,000 MT"     value={`${fmt0(row.hedgeRounded1000)} MT`} />
+          {row.expiryInfo ? (
+            <CalcRow
+              label="Contract expiry"
+              value={`${row.expiryInfo.label} BLPG1 FFA (${row.expiryInfo.tenor})`}
+              highlight
+              badge={row.expiryInfo.diff < 0 ? '⚠ expired' : row.expiryInfo.illiquid ? '⚠ >5 months — check liquidity' : ''}
+              badgeCls={row.expiryInfo.diff < 0 ? 'text-tn-red' : 'text-tn-yellow'}
+            />
+          ) : (
+            <CalcRow label="Contract expiry" value="— set loading month above" badge="required" badgeCls="text-tn-muted" />
+          )}
           <div className="border-t border-tn-border/50 pt-1 mt-1 space-y-0.5">
             <CalcRow label="Residual (cargo − hedge)" value={`${fmt0(row.residualMT)} MT`} />
             <div className="text-[10px] text-tn-muted leading-relaxed pt-0.5">
