@@ -177,7 +177,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                          focus:outline-none focus:border-tn-cyan focus:ring-1 focus:ring-tn-cyan/30"
             >
               <option value="mt">Metric tons (MT)</option>
-              <option value="lot">BLPG1-FFA lots (44,000 MT/lot)</option>
+              <option value="lot">Lots (1,000 MT per lot)</option>
             </select>
           </CtrlField>
           <CtrlField label="Default Loading Month">
@@ -193,8 +193,8 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
         <div className="mt-3 pt-3 border-t border-tn-border/50 grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] font-mono text-tn-muted leading-relaxed">
           <div>
             <span className="text-tn-purple font-bold">BLPG1-FFA contract: </span>
-            $/mt basis · 44,000 MT/lot (5% option → 46,200 MT) · monthly settlement
-            (CurMon–+5Mon, CurQ–+5Q, Cal+1/+2) · 1.25% commission total
+            $/mt · 1,000 MT/lot (physical cargo: 44,000 MT = 44 lots) · monthly settlement ·
+            Dec settles through 24th · terminates last Baltic publication day of month · 1.25% commission
           </div>
           <div>
             <span className="text-tn-yellow font-bold">Commission note: </span>
@@ -247,7 +247,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
             <>
               <div className="text-lg font-bold font-mono text-tn-yellow">
                 {hedgeUnit === 'lot'
-                  ? `${Math.round(largestHedge.hedgeMT / 44000)} lots`
+                  ? `${Math.round(largestHedge.hedgeMT / 1000)} lots`
                   : `${fmt0(largestHedge.hedgeMT)} MT`}
               </div>
               <div className="text-[10px] text-tn-muted truncate">{largestHedge.dest}</div>
@@ -257,7 +257,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
         <SCard label={`Total Hedge (${valid.filter((r) => r.isSelected).length}/${routes.length} sel.)`} color="orange">
           <div className="text-lg font-bold font-mono text-tn-orange">
             {hedgeUnit === 'lot'
-              ? `${Math.round(totalHedge / 44000)} lots`
+              ? `${Math.round(totalHedge / 1000)} lots`
               : `${fmt0(totalHedge)} MT`}
           </div>
           <div className="text-[10px] text-tn-muted">BLPG1 FFA equiv.</div>
@@ -328,7 +328,7 @@ export default function BetaHedgeTab({ inputs, onChange, routeConfigs }) {
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-bold text-tn-cyan">
                   {hedgeUnit === 'lot'
-                    ? `~${Math.round(totalHedge / 44000)} lots`
+                    ? `~${Math.round(totalHedge / 1000)} lots`
                     : `${fmt0(totalHedge)} MT`}
                 </td>
                 <td colSpan={2} />
@@ -497,7 +497,7 @@ function RouteHedgeRow({
         <td className="px-3 py-2 text-right">
           <div className="font-mono text-sm text-tn-yellow font-semibold">
             {hedgeUnit === 'lot'
-              ? `~${Math.round(row.hedgeMT / 44000)} lots`
+              ? `~${Math.round(row.hedgeMT / 1000)} lots`
               : `${fmt0(row.hedgeMT)} MT`}
           </div>
           <div className="text-[9px] font-mono text-tn-muted">
