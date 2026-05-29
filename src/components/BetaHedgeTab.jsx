@@ -6,7 +6,7 @@ const fmt0  = (v) => v == null || isNaN(v) ? '–' : v.toLocaleString('en-US', {
 const fmt2  = (v) => v == null || isNaN(v) ? '–' : v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmt4  = (v) => v == null || isNaN(v) ? '–' : Number(v).toFixed(4);
 const fmtD2 = (v) => v == null || isNaN(v) ? '–' : Number(v).toFixed(2);
-const signFmt = (v, dec = 2) => v == null ? '–' : `${v >= 0 ? '+' : ''}${Number(v).toFixed(dec)}`;
+const signFmt = (v, dec = 2) => v == null || isNaN(v) ? '–' : `${v >= 0 ? '+' : ''}${Number(v).toFixed(dec)}`;
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 function loadLS(key, fallback) {
@@ -354,7 +354,7 @@ function RouteHedgeRow({
     return (
       <tr className="border-b border-tn-border/40 bg-tn-bg-alt/50">
         <td className="px-3 py-2" />
-        <td className="px-3 py-2 text-xs text-tn-muted font-mono" colSpan={13}>
+        <td className="px-3 py-2 text-xs text-tn-muted font-mono" colSpan={14}>
           {row.origin} → {row.dest} — {row.error === 'zero_cargo' ? 'cargo MT is 0, skipped' : 'calculation error'}
         </td>
       </tr>
@@ -553,8 +553,8 @@ function CalcPanel({ row, inputs, benchmark, shockedBenchmark }) {
   const diffWarn  = row.betaDiff >= 0.01;
 
   const expiryStr = row.expiryInfo
-    ? ` Sell the ${row.expiryInfo.label} BLPG1-FFA contract (${row.expiryInfo.tenor}).`
-    : ' Set the loading month to identify the correct FFA expiry.';
+    ? ` The relevant contract is the ${row.expiryInfo.label} BLPG1-FFA (${row.expiryInfo.tenor}).`
+    : ' Set the loading month above to identify the relevant FFA expiry.';
 
   const plainEnglish = `BLPG benchmark freight was $${inputs.frtRate}/pmt on ${fmt0(bmCargo)} MT cargo (Route B). ` +
     `A +$1 shock (to $${inputs.frtRate + 1}/pmt) raised benchmark TCE from $${fmt0(benchmark.ratePerDay)}/day to ` +
